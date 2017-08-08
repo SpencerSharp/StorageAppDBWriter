@@ -409,7 +409,7 @@ public class Facility
         this.saturdayClose = saturdayClose;
     }
 
-    @DynamoDBAttribute(attributeName = "sundayClose")
+    @DynamoDBAttribute(attributeName = "sundayOpen")
     public Time getSundayOpen() {
         return sundayOpen;
     }
@@ -443,5 +443,10 @@ public class Facility
 
     public void setPromotions(String promotions) {
         this.promotions = promotions;
+    }
+    
+    public String toString()
+    {
+        return id + " " + name;
     }
 }

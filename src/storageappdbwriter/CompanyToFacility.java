@@ -42,4 +42,9 @@ public class CompanyToFacility
     public void setFacilityId(long facilityId) {
         this.facilityId = facilityId;
     }
+    
+    public String toString()
+    {
+        return id + " " + companyId + " " + facilityId;
+    }
 }

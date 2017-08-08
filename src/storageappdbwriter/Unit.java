@@ -15,6 +15,8 @@ public class Unit
     private double depth;
     private double height;
     
+    private int floor;
+    
     private double doorHeight;
     private double doorWidth;
     
@@ -76,6 +78,15 @@ public class Unit
     public void setHeight(double height) {
         this.height = height;
     }
+    
+    @DynamoDBAttribute(attributeName = "floor")
+    public int getFloor(){
+        return floor;
+    }
+    
+    public void setFloor(int floor) {
+        this.floor = floor;
+    }
 
     @DynamoDBAttribute(attributeName = "doorHeight")
     public double getDoorHeight() {
@@ -93,5 +104,10 @@ public class Unit
 
     public void setDoorWidth(double doorWidth) {
         this.doorWidth = doorWidth;
+    }
+    
+    public String toString()
+    {
+        return id + " " + name + " " + type + " " + floor;
     }
 }

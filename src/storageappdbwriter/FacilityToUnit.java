@@ -57,7 +57,7 @@ public class FacilityToUnit
         return rateAmount;
     }
     
-    public void setRateAmount(long rateAmount)
+    public void setRateAmount(double rateAmount)
     {
         this.rateAmount = rateAmount;
     }
@@ -69,5 +69,10 @@ public class FacilityToUnit
 
     public void setRateType(String rateType) {
         this.rateType = rateType;
+    }
+    
+    public String toString()
+    {
+        return id + " " + facilityId + " " + unitId + " Cost: " + rateAmount + " Type: " + rateType;
     }
 }
