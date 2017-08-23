@@ -44,13 +44,14 @@ public class StorageAppDBWriter
             Company c = new Company(line);
             c.setId(id++);
             c.setName(line);
+            out.println(c);
             companies.add(c);
         }
         
         //Setup all the facilities
         Row facilityNamesRow = storageInfoSheet.getRow(0);
         
-        int facilitiesIndex = 5;
+        int facilitiesIndex = 4;
         
         id = 0;
         for(int i = 0; i < 2; i++)
@@ -61,11 +62,14 @@ public class StorageAppDBWriter
             Facility facility = new Facility();
             facility.setName(val);
             facility.setId(id++);
+            out.println("FACILITY"+facility);
             facilities.add(facility);
         }
         
         Facility extraSpace = new Facility();
         extraSpace.setName("ExtraSpace Storage");
+        extraSpace.setId(id++);
+        out.println("FACILITY"+extraSpace);
         facilities.add(extraSpace);
         
         facilitiesIndex = 28;
@@ -94,7 +98,7 @@ public class StorageAppDBWriter
                     ctf.setFacilityId(facilities.get(i).getId());
                     ctf.setId(id++);
                     companiesToFacilities.add(ctf);
-                    break;
+                    j = companies.size();
                 }
             }
         }
@@ -208,10 +212,19 @@ public class StorageAppDBWriter
         dh.incrementVersion();
         Thread.sleep(waitTime);
         
+        AllCompaniesObject o = new AllCompaniesObject();
+        o.setId(0);
+        String info = "";
+        
+        for(Company c : companies)
+        {
+            info += c;
+        }
+        
         for(Company c : companies)
         {
             dh.addCompany(c);
-            out.println("Company " + c + "Added");
+            out.println("Company " + c + " Added");
             Thread.sleep(waitTime);
         }
         
@@ -242,5 +255,7 @@ public class StorageAppDBWriter
             out.println("Unit " + u + " Added");
             Thread.sleep(waitTime);
         }
+        
+        
     }
 }

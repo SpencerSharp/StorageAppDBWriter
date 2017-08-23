@@ -52,4 +52,9 @@ public class Company
     {
         return id + " " + name;
     }
+    
+    public String fullDelimitedToString()
+    {
+        return id+"*"+name+"*"+website;
+    }
 }

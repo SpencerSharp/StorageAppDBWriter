@@ -24,7 +24,7 @@ public class DynamoHandler
         String secretKey = sc.nextLine();
         AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
         AWSStaticCredentialsProvider cred = new AWSStaticCredentialsProvider(credentials);
-        AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().withCredentials(cred).withRegion(Regions.US_EAST_2).build();//Client(credentials).withEndpoint("dynamodb.us-west-2.amazonaws.com");
+        AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().withCredentials(cred).withRegion(Regions.US_WEST_1).build();//Client(credentials).withEndpoint("dynamodb.us-west-2.amazonaws.com");
         mapper = new DynamoDBMapper(client);
     }
     
