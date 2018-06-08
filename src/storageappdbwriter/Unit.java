@@ -9,8 +9,8 @@ public class Unit
 {
     private long id;
     private String name;
-    private String type;
     
+    private String type;
     private double width;
     private double depth;
     private double height;

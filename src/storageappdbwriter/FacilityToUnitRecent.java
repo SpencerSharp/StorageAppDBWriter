@@ -5,8 +5,8 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBIgnore;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 
-@DynamoDBTable(tableName = "FacilitiesUnits")
-public class FacilityToUnit
+@DynamoDBTable(tableName = "FacilitiesUnitsRecent")
+public class FacilityToUnitRecent
 {
     private long id;
     private long facilityId;
@@ -14,12 +14,12 @@ public class FacilityToUnit
     private String timeCreated;
     private double rateAmount;
     private String rateType;
-    
-    public FacilityToUnit()
+
+    public FacilityToUnitRecent()
     {
         
     }
-    
+
     @DynamoDBHashKey(attributeName = "id")
     public long getId()
     {
@@ -85,7 +85,7 @@ public class FacilityToUnit
     }
     
     @DynamoDBIgnore
-    public FacilityToUnit createFromFacilityToUnit(FacilityToUnitRecent other)
+    public FacilityToUnitRecent createFromFacilityToUnit(FacilityToUnit other)
     {
         this.id = other.getId();
         this.facilityId = other.getFacilityId();

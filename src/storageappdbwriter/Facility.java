@@ -10,6 +10,7 @@ public class Facility
 {
     private long id;
     private String name;
+    private long companyId;
     
     private String streetAddress1;
     private String streetAddress2;
@@ -74,6 +75,15 @@ public class Facility
 
     public void setName(String name) {
         this.name = name;
+    }
+    
+    @DynamoDBAttribute(attributeName = "companyId")
+    public long getCompanyId() {
+        return companyId;
+    }
+    
+    public void setCompanyId(long companyId) {
+        this.companyId = companyId;
     }
 
     @DynamoDBAttribute(attributeName = "streetAddress1")
