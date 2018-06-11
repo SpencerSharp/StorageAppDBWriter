@@ -10,6 +10,7 @@ public class CompanyToFacility
     private long id;
     private long companyId;
     private long facilityId;
+    private long height;
     
     public CompanyToFacility()
     {

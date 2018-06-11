@@ -1,5 +1,6 @@
 package storageappdbwriter;
 
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBIgnore;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
@@ -31,7 +32,7 @@ public class Value
         this.name = name;
     }
     
-    @DynamoDBHashKey(attributeName = "value")
+    @DynamoDBAttribute(attributeName = "value")
     public long getValue()
     {
         return value;

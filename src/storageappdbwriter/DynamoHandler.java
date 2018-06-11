@@ -48,7 +48,7 @@ public class DynamoHandler
         mapper.batchDelete(result);
         
         Value value = new Value("maxFacilityToUnitId");
-        value.value = 3;
+        value.setValue(3l);
         mapper.save(value);
     }
     

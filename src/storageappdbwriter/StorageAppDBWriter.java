@@ -7,6 +7,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import static java.lang.System.out;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -19,7 +22,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class StorageAppDBWriter
 {
-    public static void main(String[] args) throws IOException, InterruptedException
+    public static void main(String[] args) throws IOException, InterruptedException, SQLException
     {
         String fName = "161201 Self Storage Market Rent Comparison r12"; //CHANGE FILENAME HERE
         
@@ -107,12 +110,35 @@ public class StorageAppDBWriter
             {
                 if(facilities.get(i).getName().contains(companies.get(j).getName()))
                 {   
+                    out.println("FOUND: " + facilities.get(i).getName());
                     CompanyToFacility ctf = new CompanyToFacility();
                     ctf.setCompanyId(companies.get(j).getId());
                     ctf.setFacilityId(facilities.get(i).getId());
                     ctf.setId(id++);
                     companiesToFacilities.add(ctf);
                     facilities.get(i).setCompanyId(companies.get(j).getId());
+                    j = companies.size();
+                }
+                else if(facilities.get(i).getName().contains("Car Wash"))
+                {
+                    out.println("FOUND: " + facilities.get(i).getName());
+                    CompanyToFacility ctf = new CompanyToFacility();
+                    ctf.setCompanyId(6);
+                    ctf.setFacilityId(facilities.get(i).getId());
+                    ctf.setId(id++);
+                    companiesToFacilities.add(ctf);
+                    facilities.get(i).setCompanyId(6);
+                    j = companies.size();
+                }
+                else if(facilities.get(i).getName().contains("Extra Space Self Storage"))
+                {
+                    out.println("FOUND: " + facilities.get(i).getName());
+                    CompanyToFacility ctf = new CompanyToFacility();
+                    ctf.setCompanyId(2);
+                    ctf.setFacilityId(facilities.get(i).getId());
+                    ctf.setId(id++);
+                    companiesToFacilities.add(ctf);
+                    facilities.get(i).setCompanyId(2);
                     j = companies.size();
                 }
             }
@@ -314,5 +340,21 @@ public class StorageAppDBWriter
         
         
         dh.deleteFacilityToUnits();
+        
+        FacilityToUnit example = new FacilityToUnit();
+        example.setId(1);
+        example.setUnitId(0);
+        example.setFacilityId(4);
+        example.setTimeCreated("2018/06/08 14:48:40");
+        example.setRateAmount(300.0);
+        dh.mapper.save(example);
+        
+        FacilityToUnit example2 = new FacilityToUnit();
+        example2.setId(2);
+        example2.setUnitId(0);
+        example2.setFacilityId(4);
+        example2.setTimeCreated("2018/06/08 14:48:35");
+        example2.setRateAmount(20.0);
+        dh.mapper.save(example2);
     }
 }
