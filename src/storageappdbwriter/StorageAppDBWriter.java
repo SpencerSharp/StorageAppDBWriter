@@ -253,8 +253,9 @@ public class StorageAppDBWriter
         
         //Save all the objects to the AWS database
         RDSHandler rds = new RDSHandler();
-        rds.incrementVersion();
         rds.resetTables();
+        rds.incrementVersion();
+        
         
         AllCompaniesObject o = new AllCompaniesObject();
         o.setId(0);
@@ -307,16 +308,18 @@ public class StorageAppDBWriter
         example.setId(1);
         example.setUnitId(0);
         example.setFacilityId(4);
-        example.setDateCreated(new Date(200));
+        example.setDateCreated(new Date(1500000000000l));
         example.setRateAmount(new BigDecimal("300.0"));
+        example.setRateType("standard");
         rds.addFacilityToUnitHistory(example);
         
         FacilityToUnitHistory example2 = new FacilityToUnitHistory();
         example2.setId(2);
         example2.setUnitId(0);
         example2.setFacilityId(4);
-        example.setDateCreated(new Date(300));
-        example.setRateAmount(new BigDecimal("20.0"));
+        example2.setDateCreated(new Date(1300000000000l));
+        example2.setRateAmount(new BigDecimal("20.0"));
+        example2.setRateType("standard");
         rds.addFacilityToUnitHistory(example2);
     }
 }

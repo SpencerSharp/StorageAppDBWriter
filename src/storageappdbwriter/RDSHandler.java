@@ -4,6 +4,7 @@ import javax.xml.transform.Result;
 import java.io.File;
 import java.io.IOError;
 import java.io.IOException;
+import static java.lang.System.out;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -14,6 +15,23 @@ import java.util.Scanner;
 public class RDSHandler
 {
     Connection connection;
+
+    private static Long getLong(ResultSet resultSet, String name) throws SQLException
+    {
+        if(resultSet.isBeforeFirst())
+        {
+            return resultSet.getLong(name);
+        }
+        return null;
+    }
+
+
+
+
+
+
+
+
 
     public java.util.Date getDateFromSqlDate(java.sql.Date date)
     {
@@ -26,6 +44,8 @@ public class RDSHandler
 
     public java.sql.Date getSqlDateFromDate(java.util.Date date)
     {
+        if(date == null)
+            return null;
         java.sql.Date result = new java.sql.Date(date.getTime());
         return result;
     }
@@ -81,10 +101,19 @@ public class RDSHandler
         */
 
     }
-    
+
     public void resetTables()
     {
         deleteTables(connection, "Companies CompaniesFacilities Facilities FacilitiesUnitsHistory FacilitiesUnits Units Version");
+
+        createCompaniesTable(connection);
+        createCompaniesToFacilitiesTable(connection);
+        createFacilitiesTable(connection);
+        createFacilityToUnitsTable(connection);
+        createFacilityToUnitsHistoryTable(connection);
+        createUnitsTable(connection);
+        //createValuesTable(connection);
+        createVersionTable(connection);
     }
 
     public void closeConnection() {
@@ -116,8 +145,10 @@ public class RDSHandler
         Statement statement = null;
         try {
             statement = conn.createStatement();
-            String sql =  "CREATE TABLE " + "CompaniesFacilities" + "(" +
-                    "version" + " BIGINT" +")";
+            String sql =  "CREATE TABLE " + "Version" + "(" +
+                    "id" + " BIGINT PRIMARY KEY, "
+                    + "version" + " BIGINT" +")";
+            out.println(sql);
             statement.executeUpdate(sql);
             System.out.println("Created Version table");
         } catch (SQLException se) {
@@ -142,8 +173,9 @@ public class RDSHandler
             statement = conn.createStatement();
             String sql =  "CREATE TABLE " + "CompaniesFacilities" + "(" +
                     "id" + " BIGINT PRIMARY KEY," +
-                    "companyID" + " BIGINT," +
-                    "facilityid" + " BIGINT," +")";
+                    "companyId" + " BIGINT," +
+                    "facilityId" + " BIGINT" +")";
+            out.println(sql);
             statement.executeUpdate(sql);
             System.out.println("Created CompaniesFacilities table");
         } catch (SQLException se) {
@@ -167,7 +199,7 @@ public class RDSHandler
             statement = conn.createStatement();
             String sql =  "CREATE TABLE " + "MValues" + "(" +
                     "name" + " TEXT," +
-                    "value" + " BIGINT," +")";
+                    "value" + " BIGINT" +")";
             statement.executeUpdate(sql);
             System.out.println("Created Values table");
         } catch (SQLException se) {
@@ -192,7 +224,7 @@ public class RDSHandler
         try {
             statement = conn.createStatement();
             String sql =  "CREATE TABLE " + "Companies" + "(" + "id" +
-                    " BIGINT PRIMARY KEY," + "name" + " TEXT," + "website" +
+                    " BIGINT PRIMARY KEY," + "name" + " TEXT, " + "website" +
                     " TEXT" + ")";
             statement.executeUpdate(sql);
             System.out.println("Created Companies table");
@@ -216,12 +248,12 @@ public class RDSHandler
         Statement statement = null;
         try {
             statement = conn.createStatement();
-            String sql =  "CREATE TABLE " + "FacilitiesUnitsRecent" + "(" +
+            String sql =  "CREATE TABLE " + "FacilitiesUnits" + "(" +
                     "id" + " BIGINT PRIMARY KEY," +
-                    "unitId" + " BIGINT," +
                     "facilityId" + " BIGINT," +
-                    "timeCreated" + " DATETIME," +
-                    "rateAmount" + " DOUBLE," +
+                    "unitId" + " BIGINT," +
+                    "dateCreated" + " DATE," +
+                    "rateAmount" + " DECIMAL," +
                     "rateType" + " TEXT" + ")";
             statement.executeUpdate(sql);
             System.out.println("Created FacilitiesUnits table");
@@ -245,12 +277,12 @@ public class RDSHandler
         Statement statement = null;
         try {
             statement = conn.createStatement();
-            String sql =  "CREATE TABLE " + "FacilitiesUnits" + "(" +
+            String sql =  "CREATE TABLE " + "FacilitiesUnitsHistory" + "(" +
                     "id" + " BIGINT PRIMARY KEY," +
-                    "unitId" + " BIGINT," +
                     "facilityId" + " BIGINT," +
-                    "timeCreated" + " DATETIME," +
-                    "rateAmount" + " DOUBLE," +
+                    "unitId" + " BIGINT," +
+                    "dateCreated" + " DATE," +
+                    "rateAmount" + " DECIMAL," +
                     "rateType" + " TEXT" + ")";
             statement.executeUpdate(sql);
             System.out.println("Created FacilitiesUnitsHistory table");
@@ -279,12 +311,12 @@ public class RDSHandler
                     "id" + " BIGINT PRIMARY KEY," +
                     "name" + " TEXT," +
                     "type" + " TEXT," +
-                    "width" + " DOUBLE," +
-                    "depth" + " DOUBLE," +
-                    "height" + " DOUBLE," +
+                    "width" + " DECIMAL," +
+                    "depth" + " DECIMAL," +
+                    "height" + " DECIMAL," +
                     "floor" + " INT," +
-                    "doorHeight" + " DOUBLE," +
-                    "doorWidth" + " DOUBLE" + ")";
+                    "doorHeight" + " DECIMAL," +
+                    "doorWidth" + " DECIMAL" + ")";
             statement.executeUpdate(sql);
             System.out.println("Created Units table");
         } catch (SQLException se) {
@@ -318,36 +350,38 @@ public class RDSHandler
                     "zip" + " TEXT," +
                     "country" + " TEXT," +
                     "website" + " TEXT," +
-                    "setupFee" + " DOUBLE," +
-                    "percentFull" + " DOUBLE," +
-                    "hasRetailStore" + " BOOL," +
-                    "hasInsurance" + " BOOL," +
-                    "hasOnlineBillPay" + " BOOL," +
-                    "hasWineStorage" + " BOOL," +
-                    "hasKiosk" + " BOOL," +
-                    "hasOnsiteManagement" + " BOOL," +
-                    "hasCameras" + " BOOL," +
-                    "hasVehicleParking" + " BOOL," +
-                    "hasCutLocks" + " BOOL," +
-                    "hasOnsiteCarts" + " BOOL," +
-                    "hasParabolicMirrors" + " BOOL," +
-                    "hasMotionLights" + " BOOL," +
-                    "hasElectronicLease" + " BOOL," +
-                    "hasPaperlessBilling" + " BOOL," +
-                    "mondayOpen" + " DATETIME," +
-                    "mondayClose" + " DATETIME," +
-                    "tuesdayOpen" + " DATETIME," +
-                    "tuesdayClose" + " DATETIME," +
-                    "wednesdayOpen" + " DATETIME," +
-                    "wednesdayClose" + " DATETIME," +
-                    "thursdayOpen" + " DATETIME," +
-                    "thursdayClose" + " DATETIME," +
-                    "fridayOpen" + " DATETIME," +
-                    "fridayClose" + " DATETIME," +
-                    "saturdayOpen" + " DATETIME," +
-                    "saturadyClose" + " DATETIME," +
-                    "sundayOpen" + " DATETIME," +
-                    "sundayClose" + " DATETIME," +
+                    "setupFee" + " DECIMAL," +
+                    "percentFull" + " DECIMAL," +
+                    "hasRetailStore" + " BIT," +
+                    "hasInsurance" + " BIT," +
+                    "hasOnlineBillPay" + " BIT," +
+                    "hasWineStorage" + " BIT," +
+                    "hasKiosk" + " BIT," +
+                    "hasOnsiteManagement" + " BIT," +
+                    "hasCameras" + " BIT," +
+                    "hasVehicleParking" + " BIT," +
+                    "hasCutLocks" + " BIT," +
+                    "hasOnsiteShipping" + " BIT," +
+                    "hasAutopay" + " BIT," +
+                    "hasOnsiteCarts" + " BIT," +
+                    "hasParabolicMirrors" + " BIT," +
+                    "hasMotionLights" + " BIT," +
+                    "hasElectronicLease" + " BIT," +
+                    "hasPaperlessBilling" + " BIT," +
+                    "mondayOpen" + " DATE," +
+                    "mondayClose" + " DATE," +
+                    "tuesdayOpen" + " DATE," +
+                    "tuesdayClose" + " DATE," +
+                    "wednesdayOpen" + " DATE," +
+                    "wednesdayClose" + " DATE," +
+                    "thursdayOpen" + " DATE," +
+                    "thursdayClose" + " DATE," +
+                    "fridayOpen" + " DATE," +
+                    "fridayClose" + " DATE," +
+                    "saturdayOpen" + " DATE," +
+                    "saturdayClose" + " DATE," +
+                    "sundayOpen" + " DATE," +
+                    "sundayClose" + " DATE," +
                     "rating" + " TEXT," +
                     "promotions" + " TEXT" + ")";
             statement.executeUpdate(sql);
@@ -385,8 +419,13 @@ public class RDSHandler
         try {
             statement = conn.createStatement();
             String sql = "";
-            for (String s: tables) {
-                sql += "DROP " + s + ";";
+            for(int i = 0; i < tables.length; i++)
+            {
+                if(i == 0)
+                    sql += "DROP TABLE IF EXISTS";
+                else
+                    sql += ",";
+                sql += " " + tables[i];
             }
             statement.executeUpdate(sql);
             System.out.println("Deleted table(s) " + tables.toString());
@@ -424,6 +463,11 @@ public class RDSHandler
     {
         System.out.println("QUERY: " + query);
         Statement statement = connection.createStatement();
+        if(query.contains("INSERT") || query.contains("DELETE"))
+        {
+            statement.executeUpdate(query);
+            return null;
+        }
         ResultSet resultSet = statement.executeQuery(query);
         return resultSet;
     }
@@ -553,8 +597,8 @@ public class RDSHandler
     private String buildValuesOfCompanyInsertQuery(Company company)
     {
         String result = "(" + company.getId() + ", ";
-        result += company.getName() + ", ";
-        result += company.getWebsite() + ")";
+        result += "'" + company.getName() + "', ";
+        result += "" + company.getWebsite() + ")";
 
         return result;
     }
@@ -592,39 +636,38 @@ public class RDSHandler
         result += "'" + facility.getZip() + "', ";
         result += "'" + facility.getCountry() + "', ";
         result += "'" + facility.getWebsite() + "', ";
-        result += "'" + facility.getSetupFee() + "', ";
-        result += "'" + facility.getPercentFull() + "', ";
-        result += "'" + facility.hasRetailStore() + "', ";
-        result += "'" + facility.hasInsurance() + "', ";
-        result += "'" + facility.hasOnlineBillPay() + "', ";
-        result += "'" + facility.hasWineStorage() + "', ";
-        result += "'" + facility.hasKiosk() + "', ";
-        result += "'" + facility.hasOnsiteManagement() + "', ";
-        result += "'" + facility.hasCameras() + "', ";
-        result += "'" + facility.hasVehicleParking() + "', ";
-        result += "'" + facility.hasCutLocks() + "', ";
-        result += "'" + facility.hasOnsiteShipping() + "', ";
-        result += "'" + facility.getCountry() + "', ";
-        result += "'" + facility.hasAutopay() + "', ";
-        result += "'" + facility.hasOnsiteCarts() + "', ";
-        result += "'" + facility.hasParabolicMirrors() + "', ";
-        result += "'" + facility.hasMotionLights() + "', ";
-        result += "'" + facility.hasElectronicLease() + "', ";
-        result += "'" + facility.hasPaperlessBilling() + "', ";
-        result += "'" + facility.getMondayOpen() + "', ";
-        result += "'" + facility.getMondayClose() + "', ";
-        result += "'" + facility.getTuesdayOpen() + "', ";
-        result += "'" + facility.getTuesdayClose() + "', ";
-        result += "'" + facility.getWednesdayOpen() + "', ";
-        result += "'" + facility.getWednesdayClose() + "', ";
-        result += "'" + facility.getThursdayOpen() + "', ";
-        result += "'" + facility.getThursdayClose() + "', ";
-        result += "'" + facility.getFridayOpen() + "', ";
-        result += "'" + facility.getFridayClose() + "', ";
-        result += "'" + facility.getSaturdayOpen() + "', ";
-        result += "'" + facility.getSaturdayClose() + "', ";
-        result += "'" + facility.getSundayOpen() + "', ";
-        result += "'" + facility.getSundayClose() + "', ";
+        result += "" + facility.getSetupFee() + ", ";
+        result += "" + facility.getPercentFull() + ", ";
+        result += "" + facility.hasRetailStore() + ", ";
+        result += "" + facility.hasInsurance() + ", ";
+        result += "" + facility.hasOnlineBillPay() + ", ";
+        result += "" + facility.hasWineStorage() + ", ";
+        result += "" + facility.hasKiosk() + ", ";
+        result += "" + facility.hasOnsiteManagement() + ", ";
+        result += "" + facility.hasCameras() + ", ";
+        result += "" + facility.hasVehicleParking() + ", ";
+        result += "" + facility.hasCutLocks() + ", ";
+        result += "" + facility.hasOnsiteShipping() + ", ";
+        result += "" + facility.hasAutopay() + ", ";
+        result += "" + facility.hasOnsiteCarts() + ", ";
+        result += "" + facility.hasParabolicMirrors() + ", ";
+        result += "" + facility.hasMotionLights() + ", ";
+        result += "" + facility.hasElectronicLease() + ", ";
+        result += "" + facility.hasPaperlessBilling() + ", ";
+        result += "" + facility.getMondayOpen() + ", ";
+        result += "" + facility.getMondayClose() + ", ";
+        result += "" + facility.getTuesdayOpen() + ", ";
+        result += "" + facility.getTuesdayClose() + ", ";
+        result += "" + facility.getWednesdayOpen() + ", ";
+        result += "" + facility.getWednesdayClose() + ", ";
+        result += "" + facility.getThursdayOpen() + ", ";
+        result += "" + facility.getThursdayClose() + ", ";
+        result += "" + facility.getFridayOpen() + ", ";
+        result += "" + facility.getFridayClose() + ", ";
+        result += "" + facility.getSaturdayOpen() + ", ";
+        result += "" + facility.getSaturdayClose() + ", ";
+        result += "" + facility.getSundayOpen() + ", ";
+        result += "" + facility.getSundayClose() + ", ";
         result += "'" + facility.getRating() + "', ";
         result += "'" + facility.getPromotions() + "')";
 
@@ -640,10 +683,18 @@ public class RDSHandler
     private String buildValuesOfFacilityToUnitInsertQuery(FacilityToUnit facilityToUnit)
     {
         String result = "(" + facilityToUnit.getId() + ", ";
-        result += "'" + facilityToUnit.getFacilityId() + "', ";
-        result += "'" + facilityToUnit.getUnitId() + "', ";
-        result += "'" + getSqlDateFromDate(facilityToUnit.getDateCreated()) + "', ";
-        result += "'" + facilityToUnit.getRateAmount() + "', ";
+        result += "" + facilityToUnit.getFacilityId() + ", ";
+        result += "" + facilityToUnit.getUnitId() + ", ";
+        java.sql.Date date = getSqlDateFromDate(facilityToUnit.getDateCreated());
+        if(date == null)
+        {
+            result += "null, ";
+        }
+        else
+        {
+            result += "'" + date + "', ";
+        }
+        result += "" + facilityToUnit.getRateAmount() + ", ";
         result += "'" + facilityToUnit.getRateType() + "')";
 
         return result;
@@ -658,10 +709,18 @@ public class RDSHandler
     private String buildValuesOfFacilityToUnitHistoryInsertQuery(FacilityToUnitHistory facilityToUnitHistory)
     {
         String result = "(" + facilityToUnitHistory.getId() + ", ";
-        result += "'" + facilityToUnitHistory.getFacilityId() + "', ";
-        result += "'" + facilityToUnitHistory.getUnitId() + "', ";
-        result += "'" + getSqlDateFromDate(facilityToUnitHistory.getDateCreated()) + "', ";
-        result += "'" + facilityToUnitHistory.getRateAmount() + "', ";
+        result += "" + facilityToUnitHistory.getFacilityId() + ", ";
+        result += "" + facilityToUnitHistory.getUnitId() + ", ";
+        java.sql.Date date = getSqlDateFromDate(facilityToUnitHistory.getDateCreated());
+        if(date == null)
+        {
+            result += "null, ";
+        }
+        else
+        {
+            result += "'" + date + "', ";
+        }
+        result += "" + facilityToUnitHistory.getRateAmount() + ", ";
         result += "'" + facilityToUnitHistory.getRateType() + "')";
 
         return result;
@@ -676,14 +735,16 @@ public class RDSHandler
     private String buildValuesOfUnitInsertQuery(Unit unit)
     {
         String result = "(" + unit.getId() + ", ";
-        result += "'" + unit.getName() + "', ";
+        int indexOfQuote = unit.getName().indexOf("'");
+        String name = unit.getName().substring(0, indexOfQuote) + "'" + unit.getName().substring(indexOfQuote);
+        result += "'" + name + "'', ";
         result += "'" + unit.getType() + "', ";
-        result += "'" + unit.getWidth() + "', ";
-        result += "'" + unit.getDepth() + "', ";
-        result += "'" + unit.getHeight() + "', ";
-        result += "'" + unit.getFloor() + "', ";
-        result += "'" + unit.getDoorHeight() + "', ";
-        result += "'" + unit.getDoorWidth() + "') ";
+        result += "" + unit.getWidth() + ", ";
+        result += "" + unit.getDepth() + ", ";
+        result += "" + unit.getHeight() + ", ";
+        result += "" + unit.getFloor() + ", ";
+        result += "" + unit.getDoorHeight() + ", ";
+        result += "" + unit.getDoorWidth() + ") ";
 
         return result;
 
@@ -694,7 +755,7 @@ public class RDSHandler
         String query = "INSERT INTO Units VALUES" + buildValuesOfUnitInsertQuery(unit);
         return query;
     }
-    
+
 
 
 
@@ -715,7 +776,9 @@ public class RDSHandler
         String query = "SELECT * FROM Version";
         ResultSet resultSet = executeQuery(query);
         resultSet.next();
-        long val = resultSet.getLong("val");
+        Long val = getLong(resultSet, "version");
+        if(val == null)
+            val = new Long("1");
 
         query = "INSERT INTO Version VALUES(1, " + ++val + ")";
         executeQuery(query);
@@ -953,7 +1016,7 @@ public class RDSHandler
         }
 
         //Search units for unitIds of the FacilityToUnit objects
-        query = "SELECT * FROM Units WHERE unitId IN (";
+        query = "SELECT * FROM Units WHERE id IN (";
         for(int i = 0; i < facilityToUnits.size(); i++)
         {
             query += facilityToUnits.get(i).getUnitId();
@@ -979,9 +1042,12 @@ public class RDSHandler
         {
             for(Unit unit: units)
             {
-                result.add(new JavaLocalGrailsUnit(unit.getId(), unit.getName(), unit.getWidth(), unit.getDepth(),
-                        unit.getHeight(), unit.getType(), unit.getFloor(), facilityToUnit.getRateAmount(),
-                        facilityToUnit.getFacilityId(), facilityToUnit.getRateType(), facilityToUnit.getDateCreated()));
+                if(unit.getId() == facilityToUnit.getUnitId())
+                {
+                    result.add(new JavaLocalGrailsUnit(unit.getId(), unit.getName(), unit.getWidth(), unit.getDepth(),
+                            unit.getHeight(), unit.getType(), unit.getFloor(), facilityToUnit.getRateAmount(),
+                            facilityToUnit.getFacilityId(), facilityToUnit.getRateType(), facilityToUnit.getDateCreated()));
+                }
             }
         }
         return result;
@@ -990,11 +1056,13 @@ public class RDSHandler
     //Gets all the Units that match in name, floor, type
     public ArrayList<Unit> getUnitsWithInfo(ArrayList<JavaLocalGrailsUnit> list) throws SQLException
     {
-        String query = "SELECT * FROM FacilitiesUnits WHERE ";
+        String query = "SELECT * FROM Units WHERE ";
         for(int i = 0; i < list.size(); i++)
         {
             JavaLocalGrailsUnit javaLocalGrailsUnit = list.get(i);
-            query += "name='" + javaLocalGrailsUnit.name + "' AND floor=" + javaLocalGrailsUnit.floor + " AND type='" + javaLocalGrailsUnit.type + "'";
+            int indexOfQuote = javaLocalGrailsUnit.name.indexOf("'");
+            String name = javaLocalGrailsUnit.name.substring(0, indexOfQuote) + "'" + javaLocalGrailsUnit.name.substring(indexOfQuote);
+            query += "name='" + name + "'' AND floor=" + javaLocalGrailsUnit.floor + " AND type='" + javaLocalGrailsUnit.type + "'";
             if(i != list.size() - 1)
             {
                 query += " OR ";
@@ -1007,6 +1075,27 @@ public class RDSHandler
             units.add(createUnitFromResultSet(resultSet));
         }
         return units;
+    }
+
+    public ArrayList<FacilityToUnitHistory> getFacilityToUnitsHistoryWithInfo(ArrayList<JavaLocalGrailsUnit> list) throws SQLException
+    {
+        String query = "SELECT * FROM FacilitiesUnitsHistory WHERE ";
+        for(int i = 0; i < list.size(); i++)
+        {
+            JavaLocalGrailsUnit javaLocalGrailsUnit = list.get(i);
+            query += "facilityId=" + javaLocalGrailsUnit.facilityId + " AND unitId=" + javaLocalGrailsUnit.id + " AND rateType='" + javaLocalGrailsUnit.rateType + "'";
+            if(i != list.size() - 1)
+            {
+                query += " OR ";
+            }
+        }
+        ArrayList<FacilityToUnitHistory> facilityToUnitHistorys = new ArrayList<FacilityToUnitHistory>();
+        ResultSet resultSet = executeQuery(query);
+        while(resultSet.next())
+        {
+            facilityToUnitHistorys.add(createFacilityToUnitHistoryFromResultSet(resultSet));
+        }
+        return facilityToUnitHistorys;
     }
 
     public Facility getFacilityFromId(long facilityId) throws SQLException
@@ -1098,13 +1187,14 @@ public class RDSHandler
             query += buildValuesOfCompanyInsertQuery(company);
             if(i != companies.size() - 1)
             {
-                query += ",";
+                query += ", ";
             }
             else
             {
-                query += ")";
+
             }
         }
+        out.println(query);
         executeQuery(query);
     }
 
@@ -1121,7 +1211,7 @@ public class RDSHandler
             }
             else
             {
-                query += ")";
+
             }
         }
         executeQuery(query);
@@ -1140,67 +1230,84 @@ public class RDSHandler
             }
             else
             {
-                query += ")";
+
             }
         }
+        out.println(query);
         executeQuery(query);
     }
 
     public void batchSaveFacilityToUnits(ArrayList<FacilityToUnit> facilityToUnits) throws SQLException
     {
-        String query = "INSERT INTO FacilitiesUnitsRecent VALUES";
-        for(int i = 0; i < facilityToUnits.size(); i++)
+        if(facilityToUnits.size() > 0)
         {
-            FacilityToUnit facilityToUnit = facilityToUnits.get(i);
-            query += buildValuesOfFacilityToUnitInsertQuery(facilityToUnit);
-            if(i != facilityToUnits.size() - 1)
+            String query = "INSERT INTO FacilitiesUnits VALUES";
+            for(int i = 0; i < facilityToUnits.size(); i++)
             {
-                query += ",";
+                FacilityToUnit facilityToUnit = facilityToUnits.get(i);
+                out.println(facilityToUnit.getId());
+                if(facilityToUnit.getFacilityId() == 4)
+                {
+                    out.println("FOUND ONE");
+                    out.println(facilityToUnit);
+                }
+
+
+                query += buildValuesOfFacilityToUnitInsertQuery(facilityToUnit);
+                if(i != facilityToUnits.size() - 1)
+                {
+                    query += ",";
+                }
+                else
+                {
+
+                }
             }
-            else
-            {
-                query += ")";
-            }
+            executeQuery(query);
         }
-        executeQuery(query);
     }
 
     public void batchSaveFacilityToUnitsHistory(ArrayList<FacilityToUnitHistory> facilityToUnitHistories) throws SQLException
     {
-        String query = "INSERT INTO FacilitiesUnits VALUES";
-        for(int i = 0; i < facilityToUnitHistories.size(); i++)
+        if(facilityToUnitHistories.size() > 0)
         {
-            FacilityToUnitHistory facilityToUnitHistory = facilityToUnitHistories.get(i);
-            query += buildValuesOfFacilityToUnitHistoryInsertQuery(facilityToUnitHistory);
-            if(i != facilityToUnitHistories.size() - 1)
+            String query = "INSERT INTO FacilitiesUnitsHistory VALUES";
+            for(int i = 0; i < facilityToUnitHistories.size(); i++)
             {
-                query += ",";
+                FacilityToUnitHistory facilityToUnitHistory = facilityToUnitHistories.get(i);
+                query += buildValuesOfFacilityToUnitHistoryInsertQuery(facilityToUnitHistory);
+                if(i != facilityToUnitHistories.size() - 1)
+                {
+                    query += ",";
+                }
+                else
+                {
+
+                }
             }
-            else
-            {
-                query += ")";
-            }
+            executeQuery(query);
         }
-        executeQuery(query);
     }
 
     public void batchSaveUnits(ArrayList<Unit> units) throws SQLException
     {
-        String query = "INSERT INTO Units VALUES";
-        for(int i = 0; i < units.size(); i++)
+        if(units.size() > 0)
         {
-            Unit unit = units.get(i);
-            query += buildValuesOfUnitInsertQuery(unit);
-            if(i != units.size() - 1)
+            String query = "INSERT INTO Units VALUES";
+            for(int i = 0; i < units.size(); i++)
             {
-                query += ",";
+                Unit unit = units.get(i);
+                query += buildValuesOfUnitInsertQuery(unit);
+                if(i != units.size() - 1)
+                {
+                    query += ",";
+                }
+                else
+                {
+                }
             }
-            else
-            {
-                query += ")";
-            }
+            executeQuery(query);
         }
-        executeQuery(query);
     }
 
 /*    public void batchSaveValues(ArrayList<Value> values) throws SQLException
@@ -1292,18 +1399,24 @@ public class RDSHandler
      *      Get max commands
      */
 
-
     public long getMaxFacilityToUnitId() throws SQLException
     {
-        ResultSet rs = executeQuery("SELECT max(id) FROM FacilitiesUnits;");
-        return rs.getLong("id");
+        ResultSet rs = executeQuery("SELECT max(id) FROM FacilitiesUnits");
+        rs.next();
+        return rs.getLong(1);
     }
 
     public long getMaxUnitId() throws SQLException
     {
-        ResultSet rs = executeQuery("SELECT max(id) FROM Units;");
-        return rs.getLong("id");
+        ResultSet rs = executeQuery("SELECT max(id) FROM Units");
+        rs.next();
+        return rs.getLong(1);
     }
 
-
+    public long getMaxFacilityToUnitHistoryId() throws SQLException
+    {
+        ResultSet rs = executeQuery("SELECT max(id) FROM FacilitiesUnitsHistory");
+        rs.next();
+        return rs.getLong(1);
+    }
 }
