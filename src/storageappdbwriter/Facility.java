@@ -3,6 +3,8 @@ package storageappdbwriter;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
+
+import java.math.BigDecimal;
 import java.sql.Time;
 
 @DynamoDBTable(tableName = "Facilities")
@@ -11,18 +13,18 @@ public class Facility
     private long id;
     private String name;
     private long companyId;
-    
+
     private String streetAddress1;
     private String streetAddress2;
     private String city;
     private String state;
     private String zip;
     private String country;
-    
+
     private String website;
-    private double setupFee;
-    private double percentFull;
-    
+    private BigDecimal setupFee;
+    private BigDecimal percentFull;
+
     private boolean hasRetailStore;
     private boolean hasInsurance;
     private boolean hasOnlineBillPay;
@@ -39,7 +41,7 @@ public class Facility
     private boolean hasMotionLights;
     private boolean hasElectronicLease;
     private boolean hasPaperlessBilling;
-    
+
     private Time mondayOpen;
     private Time mondayClose;
     private Time tuesdayOpen;
@@ -54,9 +56,9 @@ public class Facility
     private Time saturdayClose;
     private Time sundayOpen;
     private Time sundayClose;
-    
+
     private String rating;
-    
+
     private String promotions;
 
     @DynamoDBHashKey(attributeName = "id")
@@ -76,12 +78,12 @@ public class Facility
     public void setName(String name) {
         this.name = name;
     }
-    
+
     @DynamoDBAttribute(attributeName = "companyId")
     public long getCompanyId() {
         return companyId;
     }
-    
+
     public void setCompanyId(long companyId) {
         this.companyId = companyId;
     }
@@ -150,20 +152,20 @@ public class Facility
     }
 
     @DynamoDBAttribute(attributeName = "setupFee")
-    public double getSetupFee() {
+    public BigDecimal getSetupFee() {
         return setupFee;
     }
 
-    public void setSetupFee(double setupFee) {
+    public void setSetupFee(BigDecimal setupFee) {
         this.setupFee = setupFee;
     }
 
     @DynamoDBAttribute(attributeName = "percentFull")
-    public double getPercentFull() {
+    public BigDecimal getPercentFull() {
         return percentFull;
     }
 
-    public void setPercentFull(double percentFull) {
+    public void setPercentFull(BigDecimal percentFull) {
         this.percentFull = percentFull;
     }
 
@@ -454,7 +456,7 @@ public class Facility
     public void setPromotions(String promotions) {
         this.promotions = promotions;
     }
-    
+
     public String toString()
     {
         return id + " " + name;

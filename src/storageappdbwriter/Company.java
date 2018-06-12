@@ -13,14 +13,14 @@ public class Company
 
     public Company()
     {
-        
+
     }
-    
+
     public Company(String name)
     {
         setName(name);
     }
-    
+
     @DynamoDBHashKey(attributeName = "id")
     public long getId() {
         return id;
@@ -47,12 +47,12 @@ public class Company
     public void setWebsite(String website) {
         this.website = website;
     }
-    
+
     public String toString()
     {
         return id + " " + name;
     }
-    
+
     public String fullDelimitedToString()
     {
         return id+"*"+name+"*"+website;

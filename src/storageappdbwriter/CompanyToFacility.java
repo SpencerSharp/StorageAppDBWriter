@@ -10,11 +10,10 @@ public class CompanyToFacility
     private long id;
     private long companyId;
     private long facilityId;
-    private long height;
-    
+
     public CompanyToFacility()
     {
-        
+
     }
 
     @DynamoDBHashKey(attributeName = "id")
@@ -43,7 +42,7 @@ public class CompanyToFacility
     public void setFacilityId(long facilityId) {
         this.facilityId = facilityId;
     }
-    
+
     public String toString()
     {
         return id + " " + companyId + " " + facilityId;

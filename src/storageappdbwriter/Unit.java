@@ -4,27 +4,29 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 
+import java.math.BigDecimal;
+
 @DynamoDBTable(tableName = "Units")
 public class Unit
 {
     private long id;
     private String name;
-    
     private String type;
-    private double width;
-    private double depth;
-    private double height;
-    
+
+    private BigDecimal width;
+    private BigDecimal depth;
+    private BigDecimal height;
+
     private int floor;
-    
-    private double doorHeight;
-    private double doorWidth;
-    
+
+    private BigDecimal doorHeight;
+    private BigDecimal doorWidth;
+
     public Unit()
     {
-        
+
     }
-    
+
     @DynamoDBHashKey(attributeName = "id")
     public long getId() {
         return id;
@@ -53,61 +55,76 @@ public class Unit
     }
 
     @DynamoDBAttribute(attributeName = "width")
-    public double getWidth() {
+    public BigDecimal getWidth() {
         return width;
     }
 
-    public void setWidth(double width) {
+    public void setWidth(BigDecimal width) {
         this.width = width;
     }
 
     @DynamoDBAttribute(attributeName = "depth")
-    public double getDepth() {
+    public BigDecimal getDepth() {
         return depth;
     }
 
-    public void setDepth(double depth) {
+    public void setDepth(BigDecimal depth) {
         this.depth = depth;
     }
 
     @DynamoDBAttribute(attributeName = "height")
-    public double getHeight() {
+    public BigDecimal getHeight() {
         return height;
     }
 
-    public void setHeight(double height) {
+    public void setHeight(BigDecimal height) {
         this.height = height;
     }
-    
+
     @DynamoDBAttribute(attributeName = "floor")
     public int getFloor(){
         return floor;
     }
-    
+
     public void setFloor(int floor) {
         this.floor = floor;
     }
 
     @DynamoDBAttribute(attributeName = "doorHeight")
-    public double getDoorHeight() {
+    public BigDecimal getDoorHeight() {
         return doorHeight;
     }
 
-    public void setDoorHeight(double doorHeight) {
+    public void setDoorHeight(BigDecimal doorHeight) {
         this.doorHeight = doorHeight;
     }
 
     @DynamoDBAttribute(attributeName = "doorWidth")
-    public double getDoorWidth() {
+    public BigDecimal getDoorWidth() {
         return doorWidth;
     }
 
-    public void setDoorWidth(double doorWidth) {
+    public void setDoorWidth(BigDecimal doorWidth) {
         this.doorWidth = doorWidth;
     }
-    
+
+    public boolean isEqualToJavaLocalGrailsUnit(JavaLocalGrailsUnit other)
+    {
+        if(other.type.equals(type))
+        {
+            if(other.floor == floor)
+            {
+                if(other.name.equals(name))
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public String toString()
     {
-        return id + " " + name + " " + type + " " + floor;
+        return "ID: " + id + " NAME: " + name + " TYPE: " + type + " FLOOR: " + floor;
     }
 }

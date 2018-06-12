@@ -7,6 +7,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import static java.lang.System.out;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -37,10 +38,8 @@ public class StorageAppDBWriter
         ArrayList<CompanyToFacility> companiesToFacilities = new ArrayList<CompanyToFacility>();
         ArrayList<Facility> facilities = new ArrayList<Facility>();
         ArrayList<FacilityToUnit> facilitiesToUnits = new ArrayList<FacilityToUnit>();
-        ArrayList<FacilityToUnitRecent> facilitiesToUnitsRecent = new ArrayList<FacilityToUnitRecent>();
+        ArrayList<FacilityToUnitHistory> facilitiesToUnitsHistory = new ArrayList<FacilityToUnitHistory>();
         ArrayList<Unit> units = new ArrayList<Unit>();
-        
-        ArrayList<Value> values = new ArrayList<Value>();
         
         //Get all the companies
         File companiesFile = new File("DataFiles/Companies.txt");
@@ -56,10 +55,6 @@ public class StorageAppDBWriter
             out.println(c);
             companies.add(c);
         }
-        
-        Value maxCompanyId = new Value("maxCompanyId");
-        maxCompanyId.value = id - 1;
-        values.add(maxCompanyId);
         
         //Setup all the facilities
         Row facilityNamesRow = storageInfoSheet.getRow(0);
@@ -97,10 +92,6 @@ public class StorageAppDBWriter
             out.println("FACILITY" + facility);
             facilities.add(facility);
         }
-        
-        Value maxFacilityId = new Value("maxFacilityId");
-        maxFacilityId.value = id - 1;
-        values.add(maxFacilityId);
         
         //Setup all the CompanyToFacility objects
         id = 0;
@@ -144,10 +135,6 @@ public class StorageAppDBWriter
             }
         }
         
-        Value maxCompanyToFacilityId = new Value("maxCompanyToFacilityId");
-        maxCompanyToFacilityId.value = id - 1;
-        values.add(maxCompanyToFacilityId);
-        
         //Setup all units
         id = 0;
         for(int row = 31; row < 92; row++)
@@ -155,9 +142,9 @@ public class StorageAppDBWriter
             Row r = storageInfoSheet.getRow(row);
             String unitName = r.getCell(0).getStringCellValue();
             out.println(unitName);
-            double width = Double.parseDouble(unitName.substring(0, unitName.indexOf("'")));
+            BigDecimal width = new BigDecimal(unitName.substring(0, unitName.indexOf("'")));
             String depthName = unitName.substring(unitName.indexOf("'")+1);
-            double depth = Double.parseDouble(depthName.substring(1, depthName.indexOf("'")));
+            BigDecimal depth = new BigDecimal(depthName.substring(1, depthName.indexOf("'")));
             String type = r.getCell(2).getStringCellValue();
             
             Unit u = new Unit();
@@ -173,10 +160,6 @@ public class StorageAppDBWriter
             out.println(u);
             units.add(u);
         }
-        
-        Value maxUnitId = new Value("maxUnitId");
-        maxUnitId.value = id - 1;
-        values.add(maxUnitId);
         
         //Setup all FacilityToUnit objects
         id = 0;
@@ -212,17 +195,14 @@ public class StorageAppDBWriter
                         ftu.setFacilityId(facilityId);
                         ftu.setUnitId(unitId);
                         
-                        double rateAmount = Double.parseDouble(c.toString());
+                        BigDecimal rateAmount = new BigDecimal(c.toString());
                         
                         ftu.setRateAmount(rateAmount);
                         ftu.setRateType(rateType);
                         
-                        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-                        Date date = new Date();
-                        String toSend = dateFormat.format(date);
-                        ftu.setTimeCreated(toSend);
+                        ftu.setDateCreated(new Date());
                         
-                        facilitiesToUnitsRecent.add(new FacilityToUnitRecent().createFromFacilityToUnit(ftu));
+                        facilitiesToUnitsHistory.add(new FacilityToUnitHistory().createFromFacilityToUnit(ftu));
                         facilitiesToUnits.add(ftu);
                     }
                     cellToGet = 10;
@@ -234,17 +214,14 @@ public class StorageAppDBWriter
                         ftu.setFacilityId(facilityId);
                         ftu.setUnitId(unitId);
                         
-                        double rateAmount = Double.parseDouble(c.toString());
+                        BigDecimal rateAmount = new BigDecimal(c.toString());
                         
                         ftu.setRateAmount(rateAmount);
                         ftu.setRateType(rateType);
                         
-                        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-                        Date date = new Date();
-                        String toSend = dateFormat.format(date);
-                        ftu.setTimeCreated(toSend);
+                        ftu.setDateCreated(new Date());
                         
-                        facilitiesToUnitsRecent.add(new FacilityToUnitRecent().createFromFacilityToUnit(ftu));
+                        facilitiesToUnitsHistory.add(new FacilityToUnitHistory().createFromFacilityToUnit(ftu));
                         facilitiesToUnits.add(ftu);
                     }
                     rateType = "standard";
@@ -258,37 +235,26 @@ public class StorageAppDBWriter
                         ftu.setFacilityId(facilityId);
                         ftu.setUnitId(unitId);
                         
-                        double rateAmount = Double.parseDouble(c.toString());
+                        BigDecimal rateAmount = new BigDecimal(c.toString());
                         
                         ftu.setRateAmount(rateAmount);
                         ftu.setRateType(rateType);
                         
-                        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-                        Date date = new Date();
-                        String toSend = dateFormat.format(date);
-                        ftu.setTimeCreated(toSend);
+                        ftu.setDateCreated(new Date());
                         
-                        facilitiesToUnitsRecent.add(new FacilityToUnitRecent().createFromFacilityToUnit(ftu));
+                        facilitiesToUnitsHistory.add(new FacilityToUnitHistory().createFromFacilityToUnit(ftu));
                         facilitiesToUnits.add(ftu);
                     }
                 }
             }
         }
         
-        Value maxFacilityToUnitId = new Value("maxFacilityToUnitId");
-        maxFacilityToUnitId.value = id - 1;
-        values.add(maxFacilityToUnitId);
-        
-        Value maxFacilityToUnitRecentId = new Value("maxFacilityToUnitRecentId");
-        maxFacilityToUnitRecentId.value = id - 1;
-        values.add(maxFacilityToUnitRecentId);
-        
         long waitTime = 350;
         
         //Save all the objects to the AWS database
-        DynamoHandler dh = new DynamoHandler();
-        dh.incrementVersion();
-        dh.clearAllTablesExceptVersion();
+        RDSHandler rds = new RDSHandler();
+        rds.incrementVersion();
+        rds.resetTables();
         
         AllCompaniesObject o = new AllCompaniesObject();
         o.setId(0);
@@ -299,62 +265,58 @@ public class StorageAppDBWriter
             info += c;
         }
         
-        dh.mapper.batchSave(companies);
+        rds.batchSaveCompanies(companies);
         /*for(Company c : companies)
         {
             dh.addCompany(c);
             out.println("Company " + c + " Added");
         }*/
         
-        dh.mapper.batchSave(companiesToFacilities);
+        rds.batchSaveCompanyToFacilities(companiesToFacilities);
         /*for(CompanyToFacility ctf : companiesToFacilities)
         {
             dh.addCompanyToFacility(ctf);
             out.println("CompanyToFacility " + ctf + " Added");
         }*/
         
-        dh.mapper.batchSave(facilities);
+        rds.batchSaveFacilities(facilities);
         /*for(Facility facility : facilities)
         {
             dh.addFacility(facility);
             out.println("Facility " + facility + " Added");
         }*/
         
-        dh.mapper.batchSave(facilitiesToUnits);
+        rds.batchSaveFacilityToUnits(facilitiesToUnits);
         
-        dh.mapper.batchSave(facilitiesToUnitsRecent);
+        //rds.batchSaveFacilityToUnitsHistory(facilitiesToUnitsHistory);
         /*for(FacilityToUnit ftu : facilitiesToUnits)
         {
             dh.addFacilityToUnit(ftu);
             out.println("FacilityToUnit " + ftu + " Added");
         }*/
         
-        dh.mapper.batchSave(units);
+        rds.batchSaveUnits(units);
         /*for(Unit u : units)
         {
             dh.addUnit(u);
             out.println("Unit " + u + " Added");
         }*/
-        dh.mapper.batchSave(values);
+        //dh.deleteFacilityToUnits();
         
-        
-        
-        dh.deleteFacilityToUnits();
-        
-        FacilityToUnit example = new FacilityToUnit();
+        FacilityToUnitHistory example = new FacilityToUnitHistory();
         example.setId(1);
         example.setUnitId(0);
         example.setFacilityId(4);
-        example.setTimeCreated("2018/06/08 14:48:40");
-        example.setRateAmount(300.0);
-        dh.mapper.save(example);
+        example.setDateCreated(new Date(200));
+        example.setRateAmount(new BigDecimal("300.0"));
+        rds.addFacilityToUnitHistory(example);
         
-        FacilityToUnit example2 = new FacilityToUnit();
+        FacilityToUnitHistory example2 = new FacilityToUnitHistory();
         example2.setId(2);
         example2.setUnitId(0);
         example2.setFacilityId(4);
-        example2.setTimeCreated("2018/06/08 14:48:35");
-        example2.setRateAmount(20.0);
-        dh.mapper.save(example2);
+        example.setDateCreated(new Date(300));
+        example.setRateAmount(new BigDecimal("20.0"));
+        rds.addFacilityToUnitHistory(example2);
     }
 }
