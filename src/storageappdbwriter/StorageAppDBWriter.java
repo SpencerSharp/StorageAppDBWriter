@@ -321,5 +321,30 @@ public class StorageAppDBWriter
         example2.setRateAmount(new BigDecimal("20.0"));
         example2.setRateType("standard");
         rds.addFacilityToUnitHistory(example2);
+        
+        User user = new User();
+        user.setId(0);
+        user.setType("Admin");
+        user.setFirstName("Shawn");
+        user.setLastName("Sharp");
+        user.setUsername("Admin");
+        user.setPassword("test");
+        user.setIsActive(true);
+        user.setDateCreated(new Date());
+        user.setDateUpdated(new Date());
+        
+        User user2 = new User();
+        user2.setId(1);
+        user2.setType("Standard");
+        user2.setFirstName("Spencer");
+        user2.setLastName("S");
+        user2.setUsername("spencers");
+        user2.setPassword("testPass");
+        user2.setIsActive(true);
+        user2.setDateCreated(new Date());
+        user2.setDateUpdated(new Date());
+        
+        rds.addUser(user);
+        rds.addUser(user2);
     }
 }
