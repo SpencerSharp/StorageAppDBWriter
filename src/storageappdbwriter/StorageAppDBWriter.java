@@ -471,9 +471,8 @@ public class StorageAppDBWriter
             out.println("Company " + c + " Added");
         }*/
         RDSHandler rds = new RDSHandler();
-        //writeTime.setId(rds.getMaxWriteTimeId()+1);
-        //rds.addWriteTime(writeTime);
-        rds.resetTables();
+        writeTime.setId(rds.getMaxWriteTimeId()+1);
+        rds.addWriteTime(writeTime);
         rds.batchSaveCompanies(companies);
         rds.batchSaveCompanyToFacilities(companiesToFacilities);
         /*for(CompanyToFacility ctf : companiesToFacilities)

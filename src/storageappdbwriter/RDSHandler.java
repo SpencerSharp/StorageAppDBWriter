@@ -912,6 +912,28 @@ public class RDSHandler
         String query = "INSERT INTO UserPreferences VALUES" + buildValuesOfUserPreferencesInsertQuery(userPreferences);
         return query;
     }
+    
+    private String buildValuesOfWriteTimeInsertQuery(WriteTime writeTime)
+    {
+        String result = "(";
+        result += writeTime.getId() + ",";
+        Date date = getSqlDateFromDate(writeTime.getTime());
+        if(date == null)
+        {
+            result += "null)";
+        }
+        else
+        {
+            result += "'" + date + "')";
+        }
+        return result;
+    }
+    
+    private String buildWriteTimeInsertQuery(WriteTime writeTime)
+    {
+        String query = "INSERT INTO WriteTimes VALUES" + buildValuesOfWriteTimeInsertQuery(writeTime);
+        return query;
+    }
 
 
 
@@ -1013,6 +1035,12 @@ public class RDSHandler
     public void addUserPreferences(UserPreferences userPreferences) throws SQLException
     {
         String query = buildUserPreferencesInsertQuery(userPreferences);
+        executeQuery(query);
+    }
+    
+    public void addWriteTime(WriteTime writeTime) throws SQLException
+    {
+        String query = buildWriteTimeInsertQuery(writeTime);
         executeQuery(query);
     }
 
