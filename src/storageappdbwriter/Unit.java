@@ -107,6 +107,21 @@ public class Unit
     public void setDoorWidth(BigDecimal doorWidth) {
         this.doorWidth = doorWidth;
     }
+    
+    public boolean equalsUnit(Unit other)
+    {
+        if(other.type.equals(type))
+        {
+            if(other.floor == floor)
+            {
+                if(other.name.equals(name))
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
     public boolean isEqualToJavaLocalGrailsUnit(JavaLocalGrailsUnit other)
     {

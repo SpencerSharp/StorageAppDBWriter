@@ -11,6 +11,8 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -23,17 +25,42 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class StorageAppDBWriter
 {
-    public static void main(String[] args) throws IOException, InterruptedException, SQLException
+    public static boolean isDelimiterLine(String line)
     {
-        String fName = "161201 Self Storage Market Rent Comparison r12"; //CHANGE FILENAME HERE
-        
-        File myFile = new File("DataFiles/"+fName + ".xlsx");
-        InputStream inp = new FileInputStream(myFile);
-        XSSFWorkbook wb = new XSSFWorkbook(inp);
+        String[] delimiters = {"-","~","."};
+        for(String s : delimiters)
+        {
+            if(line.equals(s))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    public static BigDecimal buildBigDecimal(String string)
+    {
+        if(string.length()==0)
+        {
+            return null;
+        }
+        out.println(string);
+        return new BigDecimal(string);
+    }
+    
+    public static Time buildTime(String string)
+    {
+        if(string.length()==0)
+        {
+            return null;
+        }
+        return new Time(Long.parseLong(string));
+    }
+    
+    public static void main(String args[]) throws IOException, InterruptedException, SQLException
+    {
+        String dataFile = "DataFiles/Scraper_Input.txt";
 
-        //Access the match result sheet
-        Sheet storageInfoSheet = wb.getSheetAt(0);
-        
         ArrayList<Company> companies = new ArrayList<Company>();
         ArrayList<CompanyToFacility> companiesToFacilities = new ArrayList<CompanyToFacility>();
         ArrayList<Facility> facilities = new ArrayList<Facility>();
@@ -41,11 +68,182 @@ public class StorageAppDBWriter
         ArrayList<FacilityToUnitHistory> facilitiesToUnitsHistory = new ArrayList<FacilityToUnitHistory>();
         ArrayList<Unit> units = new ArrayList<Unit>();
         
-        //Get all the companies
-        File companiesFile = new File("DataFiles/Companies.txt");
-        BufferedReader f = new BufferedReader(new FileReader(companiesFile));
-        
+        BufferedReader f = new BufferedReader(new FileReader(dataFile));
         String line;
+        
+        Company company = null;
+        Facility facility = null;
+        Date writingDate = new Date();
+        Timestamp writetime = new Timestamp(writingDate.getTime());
+        WriteTime writeTime = new WriteTime();
+        writeTime.setTime(writingDate);
+        
+        while((line=f.readLine())!=null)
+        {
+            out.println(line);
+            if(line.equals("-"))
+            {
+                //Company time
+                company = new Company();
+                if(companies.size() == 0)
+                {
+                    company.setId(0);
+                }
+                else
+                {
+                    company.setId(companies.get(companies.size()-1).getId()+1);
+                }
+                company.setName(f.readLine());
+                company.setWebsite(f.readLine());
+                boolean found = false;
+                for(Company temp : companies)
+                {
+                    if(temp.getName().equals(company.getName()))
+                    {
+                        company = temp;
+                        found = true;
+                    }
+                }
+                if(!found)
+                {
+                    companies.add(company);
+                }
+                
+            }
+            else if(line.equals("~"))
+            {
+                //Facility time
+                facility = new Facility();
+                if(facilities.size()==0)
+                {
+                    facility.setId(0);
+                }
+                else
+                {
+                    facility.setId(facilities.get(facilities.size()-1).getId()+1);
+                }
+                facility.setName(f.readLine());
+                facility.setCompanyId(company.getId());
+                facility.setStreetAddress1(f.readLine());
+                facility.setStreetAddress2(f.readLine());
+                facility.setCity(f.readLine());
+                facility.setState(f.readLine());
+                facility.setZip(f.readLine());
+                facility.setCountry(f.readLine());
+                facility.setWebsite(f.readLine());
+                facility.setSetupFee(buildBigDecimal(f.readLine()));
+                facility.setPercentFull(buildBigDecimal(f.readLine()));
+                facility.setHasRetailStore(Boolean.parseBoolean(f.readLine()));
+                facility.setHasRetailStore(Boolean.parseBoolean(f.readLine()));
+                facility.setHasOnlineBillPay(Boolean.parseBoolean(f.readLine()));
+                facility.setHasWineStorage(Boolean.parseBoolean(f.readLine()));
+                facility.setHasKiosk(Boolean.parseBoolean(f.readLine()));
+                facility.setHasOnsiteManagement(Boolean.parseBoolean(f.readLine()));
+                facility.setHasCameras(Boolean.parseBoolean(f.readLine()));
+                facility.setHasVehicleParking(Boolean.parseBoolean(f.readLine()));
+                facility.setHasCutLocks(Boolean.parseBoolean(f.readLine()));
+                facility.setHasOnsiteShipping(Boolean.parseBoolean(f.readLine()));
+                facility.setHasAutopay(Boolean.parseBoolean(f.readLine()));
+                facility.setHasOnsiteCarts(Boolean.parseBoolean(f.readLine()));
+                facility.setHasParabolicMirrors(Boolean.parseBoolean(f.readLine()));
+                facility.setHasMotionLights(Boolean.parseBoolean(f.readLine()));
+                facility.setHasElectronicLease(Boolean.parseBoolean(f.readLine()));
+                facility.setHasPaperlessBilling(Boolean.parseBoolean(f.readLine()));
+                facility.setMondayOpen(buildTime(f.readLine()));
+                facility.setMondayClose(buildTime(f.readLine()));
+                facility.setTuesdayOpen(buildTime(f.readLine()));
+                facility.setTuesdayClose(buildTime(f.readLine()));
+                facility.setWednesdayOpen(buildTime(f.readLine()));
+                facility.setWednesdayClose(buildTime(f.readLine()));
+                facility.setThursdayOpen(buildTime(f.readLine()));
+                facility.setThursdayClose(buildTime(f.readLine()));
+                facility.setFridayOpen(buildTime(f.readLine()));
+                facility.setFridayClose(buildTime(f.readLine()));
+                facility.setSaturdayOpen(buildTime(f.readLine()));
+                facility.setSaturdayClose(buildTime(f.readLine()));
+                facility.setSundayOpen(buildTime(f.readLine()));
+                facility.setSundayClose(buildTime(f.readLine()));
+                facility.setRating(f.readLine());
+                facility.setPromotions(f.readLine());
+                facilities.add(facility);
+                
+                CompanyToFacility companyToFacility = new CompanyToFacility();
+                if(companiesToFacilities.size()==0)
+                {
+                    companyToFacility.setId(0);
+                }
+                else
+                {
+                    companyToFacility.setId(companiesToFacilities.get(companiesToFacilities.size()-1).getId()+1);
+                }
+                companyToFacility.setCompanyId(company.getId());
+                companyToFacility.setFacilityId(facility.getId());
+                companiesToFacilities.add(companyToFacility);
+            }
+            else //Units time
+            {
+                Unit unit = null;
+                
+                if(unit==null)
+                {
+                    unit = new Unit();
+                    if(units.size()==0)
+                    {
+                        unit.setId(0);
+                    }
+                    else
+                    {
+                        unit.setId(units.get(units.size()-1).getId()+1);
+                    }
+                    unit.setName(f.readLine());
+                    unit.setName(unit.getName().replace(" ", ""));
+                    unit.setType(f.readLine());
+                    unit.setWidth(buildBigDecimal(f.readLine()));
+                    unit.setDepth(buildBigDecimal(f.readLine()));
+                    unit.setHeight(buildBigDecimal(f.readLine()));
+                    unit.setFloor(Integer.parseInt(f.readLine()));
+                    unit.setDoorHeight(buildBigDecimal(f.readLine()));
+                    unit.setDoorWidth(buildBigDecimal(f.readLine()));
+                    
+                    boolean found = false;
+                    for(Unit temp : units)
+                    {
+                        if(temp.equalsUnit(unit))
+                        {
+                            unit = temp;
+                            found = true;
+                            break;
+                        }
+                    }
+                    
+                    if(!found)
+                    {
+                        units.add(unit);
+                    }
+                    
+                    
+                }
+                FacilityToUnit facilityToUnit = new FacilityToUnit();
+                if(facilitiesToUnits.size()==0)
+                {
+                    facilityToUnit.setId(0);
+                }
+                else
+                {
+                    facilityToUnit.setId(facilitiesToUnits.get(facilitiesToUnits.size()-1).getId()+1);
+                }
+                facilityToUnit.setRateAmount(new BigDecimal(f.readLine()));
+                facilityToUnit.setRateType(f.readLine());
+                facilityToUnit.setUnitId(unit.getId());
+                facilityToUnit.setFacilityId(facility.getId());
+                facilityToUnit.setDateCreated(writingDate);
+                facilityToUnit.setRateType("standard");
+                facilitiesToUnits.add(facilityToUnit);
+            }
+        }
+        /*
+        //Get all the companies
+        
         long id = 0;
         while((line=f.readLine())!=null)
         {
@@ -266,13 +464,17 @@ public class StorageAppDBWriter
             info += c;
         }
         
-        rds.batchSaveCompanies(companies);
+        
         /*for(Company c : companies)
         {
             dh.addCompany(c);
             out.println("Company " + c + " Added");
         }*/
-        
+        RDSHandler rds = new RDSHandler();
+        //writeTime.setId(rds.getMaxWriteTimeId()+1);
+        //rds.addWriteTime(writeTime);
+        rds.resetTables();
+        rds.batchSaveCompanies(companies);
         rds.batchSaveCompanyToFacilities(companiesToFacilities);
         /*for(CompanyToFacility ctf : companiesToFacilities)
         {
@@ -344,7 +546,16 @@ public class StorageAppDBWriter
         user2.setDateCreated(new Date());
         user2.setDateUpdated(new Date());
         
-        rds.addUser(user);
-        rds.addUser(user2);
+        ArrayList<User> users = new ArrayList<User>();
+        users.add(user);
+        users.add(user2);
+        
+        UserPreferences userPreferences = new UserPreferences();
+        userPreferences.setUserId(0);
+        userPreferences.setLandingPage("Unit Table");
+        userPreferences.setLandingFacilityId(4);
+        rds.addUserPreferences(userPreferences);
+        
+        rds.batchSaveUsers(users);
     }
 }
