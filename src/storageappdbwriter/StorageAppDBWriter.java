@@ -63,7 +63,7 @@ public class StorageAppDBWriter
     public static void main(String args[]) throws IOException, InterruptedException, SQLException
     {
         RDSHandler rds = new RDSHandler();
-        rds.resetTables();
+        //rds.resetTables();
         //System.exit(1);
         
         String dataFile = "DataFiles/Scraper_Input.txt";
@@ -96,12 +96,12 @@ public class StorageAppDBWriter
         
         for(int i = 0; i < 2; i++)
         {
-            out.println(companies);
+            //out.println(companies);
             BufferedReader f = new BufferedReader(new FileReader(dataFile));
             String line;
             while((line=f.readLine())!=null)
             {
-                //out.println("LINE: " + line);
+                out.println("LINE: " + line);
                 if(line.equals("-"))
                 {
                     //Company time
@@ -145,7 +145,7 @@ public class StorageAppDBWriter
                         facility.setId(facilities.get(facilities.size()-1).getId()+1);
                     }
                     facility.setName(f.readLine());
-                    facility.setSourceURL(facility.getName());
+                    facility.setSourceURL(f.readLine());
                     facility.setCompanyId(company.getId());
                     facility.setStreetAddress1(f.readLine());
                     facility.setStreetAddress2(f.readLine());
@@ -188,7 +188,16 @@ public class StorageAppDBWriter
                     facility.setSundayClose(buildTime(f.readLine()));
                     facility.setRating(f.readLine());
                     facility.setPromotions(f.readLine());
-                    out.println(facility);
+                    
+                    for(Facility temp : facilities)
+                    {
+                        if(temp.equals(facility))
+                        {
+                            temp.setCompanyId(company.getId());
+                        }
+                    }
+                    
+                    //out.println(facility);
                     if(i==0)
                         facilities.add(facility);
 
@@ -234,6 +243,7 @@ public class StorageAppDBWriter
                         unit.setDoorWidth(buildBigDecimal(f.readLine()));
 
                         boolean found = false;
+                        //TODO: Replace this loop with something else
                         for(Unit temp : units)
                         {
                             if(temp.equalsUnit(unit))
@@ -242,6 +252,11 @@ public class StorageAppDBWriter
                                 found = true;
                                 break;
                             }
+                        }
+                        
+                        if(unit.getType().equals("Non-Climate") && unit.getName().equals("5'x10'") && unit.getFloor() == 1)
+                        {
+                            out.println("DUPLICATE: " + facility);
                         }
 
                         if(!found)
@@ -282,6 +297,7 @@ public class StorageAppDBWriter
                 Collections.sort(companies);
                 Collections.sort(facilities);
                 Collections.sort(units);
+                out.println(units);
                 
                 ArrayList<Company> dbCompanies = rds.getAllCompanies();
                 ArrayList<Facility> dbFacilities = rds.getAllFacilities();
@@ -327,6 +343,7 @@ public class StorageAppDBWriter
                 for(int in = index1; in < companies.size(); in++)
                 {
                     companyToCorrectId.put(companies.get(in), ++maxCompanyId);
+                    companies.get(in).setId(maxCompanyId);
                 }
                 
                 index1 = 0;
@@ -350,12 +367,14 @@ public class StorageAppDBWriter
                     if(localFacility.compareTo(dbFacility) < 0) //This is a new company
                     {
                         facilityToCorrectId.put(localFacility, ++maxFacilityId);
+                        facility.setId(maxFacilityId);
                         index1++;
                         
                     }
                     else if(localFacility.compareTo(dbFacility) == 0) //The companies match
                     {
                         facilityToCorrectId.put(localFacility, dbFacility.getId());
+                        facility.setId(dbFacility.getId());
                         index1++;
                         index2++;
                     }
@@ -367,6 +386,7 @@ public class StorageAppDBWriter
                 for(int in = index1; in < facilities.size(); in++)
                 {
                     facilityToCorrectId.put(facilities.get(in), ++maxFacilityId);
+                    facilities.get(in).setId(maxFacilityId);
                 }
                 
                 index1 = 0;
@@ -390,12 +410,13 @@ public class StorageAppDBWriter
                     if(localUnit.compareTo(dbUnit) < 0) //This is a new company
                     {
                         unitToCorrectId.put(localUnit, ++maxUnitId);
+                        localUnit.setId(maxUnitId);
                         index1++;
-                        
                     }
                     else if(localUnit.compareTo(dbUnit) == 0) //The companies match
                     {
                         unitToCorrectId.put(localUnit, dbUnit.getId());
+                        localUnit.setId(dbUnit.getId());
                         index1++;
                         index2++;
                     }
@@ -407,6 +428,7 @@ public class StorageAppDBWriter
                 for(int in = index1; in < units.size(); in++)
                 {
                     unitToCorrectId.put(units.get(in), ++maxUnitId);
+                    units.get(in).setId(maxUnitId);
                 }
                 out.println("MAP OF FOUND: " + companyToCorrectId);
             }
@@ -506,16 +528,21 @@ public class StorageAppDBWriter
         }
         for(int in = index1; in < facilitiesToUnits.size(); in++)
         {
+            if(in==137 || in==138)
+            {
+                out.println(facilitiesToUnits.get(in));
+            }
             facilitiesToUnits.get(in).setId(++maxFacilityToUnitId);
         }
-        
+
         //NOW ALL THE LISTS ARE SET UP WITH CORRECT IDS!!!
         ArrayList<FacilityToUnit> onesToReplace = rds.getFacilityToUnitsFromFacilityIds(facilityToUnitsToBackup);
         ArrayList<FacilityToUnitHistory> onesToAdd = new ArrayList<FacilityToUnitHistory>();
         for(int in = 0; in < onesToReplace.size(); in++)
         {
             onesToReplace.get(in).setId(++maxFacilityToUnitHistoryId);
-            onesToAdd.add(new FacilityToUnitHistory().createFromFacilityToUnit(onesToReplace.get(in)));
+            //if(onesToReplace.get(in).getFacilityId() == 6)
+                onesToAdd.add(new FacilityToUnitHistory().createFromFacilityToUnit(onesToReplace.get(in)));
         }
         
         rds.batchSaveFacilityToUnitsHistory(onesToAdd);
@@ -844,9 +871,9 @@ public class StorageAppDBWriter
         userPreferences.setUserId(0);
         userPreferences.setLandingPage("Unit Table");
         userPreferences.setLandingFacilityId(4);
-        rds.addUserPreferences(userPreferences);
+        //rds.addUserPreferences(userPreferences);
         
-        rds.batchSaveUsers(users);
+        //rds.batchSaveUsers(users);
         
     }
 }

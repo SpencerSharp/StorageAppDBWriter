@@ -146,14 +146,24 @@ public class Unit implements Comparable<Unit>
     
     public int compareTo(Unit other)
     {
-        int c = name.compareTo(other.name);
+        int c = width.compareTo(other.width);
         if(c < 0)
         {
-            return 1;
+            return -1;
         }
         else if(c > 0)
         {
+            return 1;
+        }
+        
+        c = depth.compareTo(other.depth);
+        if(c < 0)
+        {
             return -1;
+        }
+        else if(c > 0)
+        {
+            return 1;
         }
         
         c = type.compareTo(other.type);
