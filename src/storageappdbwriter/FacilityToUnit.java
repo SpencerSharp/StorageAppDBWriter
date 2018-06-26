@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 @DynamoDBTable(tableName = "FacilitiesUnitsRecent")
-public class FacilityToUnit
+public class FacilityToUnit implements Comparable<FacilityToUnit>
 {
     private long id;
     private long facilityId;
@@ -103,5 +103,32 @@ public class FacilityToUnit
     public String toString()
     {
         return id + " " + facilityId + " " + unitId + " Cost: " + rateAmount + " Type: " + rateType;
+    }
+    
+    public int compareTo(FacilityToUnit other)
+    {
+        if(facilityId > other.facilityId)
+        {
+            return 1;
+        }
+        else if(facilityId < other.facilityId)
+        {
+            return -1;
+        }
+        else
+        {
+            if(unitId > other.unitId)
+            {
+                return 1;
+            }
+            else if(unitId < other.unitId)
+            {
+                return -1;
+            }
+            else
+            {
+                return rateType.compareTo(other.rateType);
+            }
+        }
     }
 }

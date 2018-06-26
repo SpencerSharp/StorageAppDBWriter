@@ -5,9 +5,10 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 
 @DynamoDBTable(tableName = "Units")
-public class Unit
+public class Unit implements Comparable<Unit>
 {
     private long id;
     private String name;
@@ -141,5 +142,75 @@ public class Unit
     public String toString()
     {
         return "ID: " + id + " NAME: " + name + " TYPE: " + type + " FLOOR: " + floor;
+    }
+    
+    public int compareTo(Unit other)
+    {
+        int c = name.compareTo(other.name);
+        if(c < 0)
+        {
+            return 1;
+        }
+        else if(c > 0)
+        {
+            return -1;
+        }
+        
+        c = type.compareTo(other.type);
+        if(c < 0)
+        {
+            return 1;
+        }
+        else if(c > 0)
+        {
+            return -1;
+        }
+        
+        if(floor > other.floor)
+        {
+            return -1;
+        }
+        else if(floor < other.floor)
+        {
+            return 1;
+        }
+        return 0;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int hash = 5;
+        hash = 89 * hash + Objects.hashCode(this.name);
+        hash = 89 * hash + Objects.hashCode(this.type);
+        hash = 89 * hash + this.floor;
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if(obj == null)
+        {
+            return false;
+        }
+        if(getClass() != obj.getClass())
+        {
+            return false;
+        }
+        final Unit other = (Unit) obj;
+        if(!Objects.equals(this.name, other.name))
+        {
+            return false;
+        }
+        if(!Objects.equals(this.type, other.type))
+        {
+            return false;
+        }
+        if(this.floor != other.floor)
+        {
+            return false;
+        }
+        return true;
     }
 }

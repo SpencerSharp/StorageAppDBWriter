@@ -5,7 +5,7 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 
 @DynamoDBTable(tableName = "CompaniesFacilities")
-public class CompanyToFacility
+public class CompanyToFacility implements Comparable<CompanyToFacility>
 {
     private long id;
     private long companyId;
@@ -46,5 +46,32 @@ public class CompanyToFacility
     public String toString()
     {
         return id + " " + companyId + " " + facilityId;
+    }
+    
+    public int compareTo(CompanyToFacility other)
+    {
+        if(companyId > other.companyId)
+        {
+            return 1;
+        }
+        else if(companyId < other.companyId)
+        {
+            return -1;
+        }
+        else
+        {
+            if(facilityId > other.facilityId)
+            {
+                return 1;
+            }
+            else if(facilityId < other.facilityId)
+            {
+                return -1;
+            }
+            else
+            {
+                return 0;
+            }
+        }
     }
 }

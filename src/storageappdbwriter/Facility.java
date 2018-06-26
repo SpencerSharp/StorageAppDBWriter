@@ -6,11 +6,15 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 
 import java.math.BigDecimal;
 import java.sql.Time;
+import java.util.Objects;
 
 @DynamoDBTable(tableName = "Facilities")
-public class Facility
+public class Facility implements Comparable<Facility>
 {
     private long id;
+    
+    private String sourceURL;
+    
     private String name;
     private long companyId;
 
@@ -68,6 +72,16 @@ public class Facility
 
     public void setId(long id) {
         this.id = id;
+    }
+    
+    public String getSourceURL()
+    {
+        return sourceURL;
+    }
+    
+    public void setSourceURL(String source)
+    {
+        sourceURL = source;
     }
 
     @DynamoDBAttribute(attributeName = "name")
@@ -460,5 +474,42 @@ public class Facility
     public String toString()
     {
         return id + " " + name;
+    }
+    
+    @Override
+    public int compareTo(Facility other)
+    {
+        if(sourceURL == null || other.sourceURL == null)
+        {
+            return name.compareTo(other.name);
+        }
+        return sourceURL.compareTo(other.sourceURL);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int hash = 7;
+        hash = 47 * hash + Objects.hashCode(this.sourceURL);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if(obj == null)
+        {
+            return false;
+        }
+        if(getClass() != obj.getClass())
+        {
+            return false;
+        }
+        final Facility other = (Facility) obj;
+        if(!Objects.equals(this.sourceURL, other.sourceURL))
+        {
+            return false;
+        }
+        return true;
     }
 }

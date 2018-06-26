@@ -108,7 +108,7 @@ public class RDSHandler
 
     public void resetTables()
     {
-        deleteTables(connection, "Companies CompaniesFacilities Facilities FacilitiesUnitsHistory FacilitiesUnits Units Users UserPreferences Version");
+        deleteTables(connection, "Companies CompaniesFacilities Facilities FacilitiesUnitsHistory FacilitiesUnits Units Users UserPreferences WriteTimes Version");
 
         createCompaniesTable(connection);
         createCompaniesToFacilitiesTable(connection);
@@ -118,6 +118,7 @@ public class RDSHandler
         createUnitsTable(connection);
         createUsersTable(connection);
         createUserPreferencesTable(connection);
+        createWriteTimesTable(connection);
         //createValuesTable(connection);
         createVersionTable(connection);
     }
@@ -256,6 +257,7 @@ public class RDSHandler
             statement = conn.createStatement();
             String sql =  "CREATE TABLE " + "Facilities" + "(" +
                     "id" + " BIGINT PRIMARY KEY," +
+                    "sourceURL" + " TEXT," +
                     "name" + " TEXT," +
                     "companyId" + " BIGINT," +
                     "streetAddress1" + " TEXT," +
@@ -469,6 +471,33 @@ public class RDSHandler
             }// nothing we can do
         }//end try
     }
+    
+    private static void createWriteTimesTable(Connection conn)
+    {
+        Statement statement = null;
+
+        try {
+            statement = conn.createStatement();
+            String sql =  "CREATE TABLE " + "WriteTimes(" +
+                    "id" + " BIGINT PRIMARY KEY," +
+                    "time" + " TIMESTAMP)";
+            statement.executeUpdate(sql);
+            System.out.println("Created WriteTimes table");
+        } catch (SQLException se) {
+            //Handle errors for JDBC
+            se.printStackTrace();
+        } catch (Exception e) {
+            //Handle errors for Class.forName
+            e.printStackTrace();
+        } finally {
+            //finally block used to close resources
+            try {
+                if (statement != null)
+                    statement.close();
+            } catch (SQLException se2) {
+            }// nothing we can do
+        }//end try
+    }
 
 
 
@@ -531,7 +560,7 @@ public class RDSHandler
 
     public ResultSet executeQuery(String query) throws SQLException
     {
-        System.out.println("QUERY: " + query);
+        //System.out.println("QUERY: " + query);
         Statement statement = connection.createStatement();
         if(query.contains("INSERT") || query.contains("DELETE") || query.contains("UPDATE") || query.contains("TRUNCATE"))
         {
@@ -728,6 +757,7 @@ public class RDSHandler
     private String buildValuesOfFacilityInsertQuery(Facility facility)
     {
         String result = "(" + facility.getId() + ", ";
+        result += "'" + facility.getSourceURL() + "', ";
         result += "'" + facility.getName() + "', ";
         result += "'" + facility.getCompanyId() + "', ";
         result += "'" + facility.getStreetAddress1() + "', ";
@@ -1192,9 +1222,13 @@ public class RDSHandler
 
         return companies;
     }
-
-    public ArrayList<JavaLocalGrailsUnit> getUnitsFromFacilityIds(ArrayList<Long> facilityIds) throws SQLException
+    
+    public ArrayList<FacilityToUnit> getFacilityToUnitsFromFacilityIds(ArrayList<Long> facilityIds) throws SQLException
     {
+        if(facilityIds.size() == 0)
+        {
+            return new ArrayList<FacilityToUnit>();
+        }
         //Search FacilitiesUnits for facilityIds
         String query = "SELECT * FROM FacilitiesUnits WHERE facilityId IN (";
         for(int i = 0; i < facilityIds.size(); i++)
@@ -1215,9 +1249,15 @@ public class RDSHandler
         {
             facilityToUnits.add(createFacilityToUnitFromResultSet(resultSet));
         }
+        return facilityToUnits;
+    }
+
+    public ArrayList<JavaLocalGrailsUnit> getUnitsFromFacilityIds(ArrayList<Long> facilityIds) throws SQLException
+    {
+        ArrayList<FacilityToUnit> facilityToUnits = getFacilityToUnitsFromFacilityIds(facilityIds);
 
         //Search units for unitIds of the FacilityToUnit objects
-        query = "SELECT * FROM Units WHERE id IN (";
+        String query = "SELECT * FROM Units WHERE id IN (";
         for(int i = 0; i < facilityToUnits.size(); i++)
         {
             query += facilityToUnits.get(i).getUnitId();
@@ -1230,7 +1270,7 @@ public class RDSHandler
                 query += ")";
             }
         }
-        resultSet = executeQuery(query);
+        ResultSet resultSet = executeQuery(query);
         ArrayList<Unit> units = new ArrayList<Unit>();
         while(resultSet.next())
         {
@@ -1378,29 +1418,7 @@ public class RDSHandler
         return "failed";
     }
 
-    public ArrayList<User> getAllUsers() throws SQLException
-    {
-        ArrayList<User> users = new ArrayList<User>();
-        String query = "SELECT * FROM Users";
-        ResultSet resultSet = executeQuery(query);
-        while(resultSet.next())
-        {
-            users.add(createUserFromResultSet(resultSet));
-        }
-        return users;
-    }
-
-    public ArrayList<Company> getAllCompanies() throws SQLException
-    {
-        ArrayList<Company> companies = new ArrayList<Company>();
-        String query = "SELECT * FROM Companies";
-        ResultSet resultSet = executeQuery(query);
-        while(resultSet.next())
-        {
-            companies.add(createCompanyFromResultSet(resultSet));
-        }
-        return companies;
-    }
+    
 
     public ArrayList<User> getActiveUsers() throws SQLException
     {
@@ -1441,6 +1459,280 @@ public class RDSHandler
         resultSet.next();
         return createUserPreferencesFromResultSet(resultSet);
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    public ArrayList<Company> getAllCompanies() throws SQLException
+    {
+        ArrayList<Company> companies = new ArrayList<Company>();
+        String query = "SELECT * FROM Companies";
+        ResultSet resultSet = executeQuery(query);
+        while(resultSet.next())
+        {
+            companies.add(createCompanyFromResultSet(resultSet));
+        }
+        return companies;
+    }
+    
+    public ArrayList<CompanyToFacility> getAllCompanyToFacilities() throws SQLException
+    {
+        ArrayList<CompanyToFacility> companyToFacilities = new ArrayList<CompanyToFacility>();
+        String query = "SELECT * FROM CompaniesFacilities";
+        ResultSet resultSet = executeQuery(query);
+        while(resultSet.next())
+        {
+            companyToFacilities.add(createCompanyToFacilityFromResultSet(resultSet));
+        }
+        return companyToFacilities;
+    }
+    
+    public ArrayList<Facility> getAllFacilities() throws SQLException
+    {
+        ArrayList<Facility> facilities = new ArrayList<Facility>();
+        String query = "SELECT * FROM Facilities";
+        ResultSet resultSet = executeQuery(query);
+        while(resultSet.next())
+        {
+            facilities.add(createFacilityFromResultSet(resultSet));
+        }
+        return facilities;
+    }
+    
+    public ArrayList<FacilityToUnit> getAllFacilityToUnits() throws SQLException
+    {
+        ArrayList<FacilityToUnit> facilityToUnits = new ArrayList<FacilityToUnit>();
+        String query = "SELECT * FROM FacilitiesUnits";
+        ResultSet resultSet = executeQuery(query);
+        while(resultSet.next())
+        {
+            facilityToUnits.add(createFacilityToUnitFromResultSet(resultSet));
+        }
+        return facilityToUnits;
+    }
+    
+    public ArrayList<Unit> getAllUnits() throws SQLException
+    {
+        ArrayList<Unit> units = new ArrayList<Unit>();
+        String query = "SELECT * FROM Units";
+        ResultSet resultSet = executeQuery(query);
+        while(resultSet.next())
+        {
+            units.add(createUnitFromResultSet(resultSet));
+        }
+        return units;
+    }
+    
+    public ArrayList<User> getAllUsers() throws SQLException
+    {
+        ArrayList<User> users = new ArrayList<User>();
+        String query = "SELECT * FROM Users";
+        ResultSet resultSet = executeQuery(query);
+        while(resultSet.next())
+        {
+            users.add(createUserFromResultSet(resultSet));
+        }
+        return users;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    public void forceAddCompanies(ArrayList<Company> companies) throws SQLException
+    {
+        String query = "INSERT INTO Companies (id, name, website)\n";
+        query += "VALUES\n";
+        for(int i = 0; i < companies.size(); i++)
+        {
+            query += buildValuesOfCompanyInsertQuery(companies.get(i));
+            if(i < companies.size()-1)
+            {
+                query += ",";
+            }
+            query += "\n";
+        }
+        query += "ON DUPLICATE KEY UPDATE\n";
+        query += "id = VALUES(id),\n";
+        query += "name = VALUES(name),\n";
+        query += "website = VALUES(website)";
+        executeQuery(query);
+    }
+    
+    public void forceAddCompanyToFacilities(ArrayList<CompanyToFacility> companyToFacilities) throws SQLException
+    {
+        String query = "INSERT INTO CompaniesFacilities (id, companyId, facilityId)\n";
+        query += "VALUES\n";
+        for(int i = 0; i < companyToFacilities.size(); i++)
+        {
+            query += buildValuesOfCompanyToFacilityInsertQuery(companyToFacilities.get(i));
+            if(i < companyToFacilities.size()-1)
+            {
+                query += ",";
+            }
+            query += "\n";
+        }
+        query += "ON DUPLICATE KEY UPDATE\n";
+        query += "id = VALUES(id),\n";
+        query += "companyId = VALUES(companyId),\n";
+        query += "facilityId = VALUES(facilityId)";
+        executeQuery(query);
+    }
+    
+    public void forceAddFacilities(ArrayList<Facility> facilities) throws SQLException
+    {
+        String query = "INSERT INTO Facilities (id, sourceURL, name, companyId, "
+                + "streetAddress1, streetAddress2, city, state, zip, country, "
+                + "website, setupFee, percentFull, hasRetailStore, hasInsurance, "
+                + "hasOnlineBillPay, hasWineStorage, hasKiosk, hasOnsiteManagement, "
+                + "hasCameras, hasVehicleParking, hasCutLocks, hasOnsiteShipping, "
+                + "hasAutopay, hasOnsiteCarts, hasParabolicMirrors, hasMotionLights, "
+                + "hasElectronicLease, hasPaperlessBilling, mondayOpen, mondayClose, "
+                + "tuesdayOpen, tuesdayClose, wednesdayOpen, wednesdayClose, thursdayOpen, "
+                + "thursdayClose, fridayOpen, fridayClose, saturdayOpen, saturdayClose, "
+                + "sundayOpen, sundayClose, rating, promotions)\n";
+        query += "VALUES\n";
+        for(int i = 0; i < facilities.size(); i++)
+        {
+            query += buildValuesOfFacilityInsertQuery(facilities.get(i));
+            if(i < facilities.size()-1)
+            {
+                query += ",";
+            }
+            query += "\n";
+        }
+        query += "ON DUPLICATE KEY UPDATE\n";
+        query += "id = VALUES(id),\n";
+        query += "sourceURL = VALUES(sourceURL),\n";
+        query += "name = VALUES(name),\n";
+        query += "companyId = VALUES(companyId),\n";
+        query += "streetAddress1 = VALUES(streetAddress1),\n";
+        query += "streetAddress2 = VALUES(streetAddress2),\n";
+        query += "city = VALUES(city),\n";
+        query += "state = VALUES(state),\n";
+        query += "zip = VALUES(zip),\n";
+        query += "country = VALUES(country),\n";
+        query += "website = VALUES(website),\n";
+        query += "setupFee = VALUES(setupFee),\n";
+        query += "percentFull = VALUES(percentFull),\n";
+        query += "hasRetailStore = VALUES(hasRetailStore),\n";
+        query += "hasInsurance = VALUES(hasInsurance),\n";
+        query += "hasOnlineBillPay = VALUES(hasOnlineBillPay),\n";
+        query += "hasWineStorage = VALUES(hasWineStorage),\n";
+        query += "hasKiosk = VALUES(hasKiosk),\n";
+        query += "hasOnsiteManagement = VALUES(hasOnsiteManagement),\n";
+        query += "hasCameras = VALUES(hasCameras),\n";
+        query += "hasVehicleParking = VALUES(hasVehicleParking),\n";
+        query += "hasCutLocks = VALUES(hasCutLocks),\n";
+        query += "hasOnsiteShipping = VALUES(hasOnsiteShipping),\n";
+        query += "hasAutopay = VALUES(hasAutopay),\n";
+        query += "hasOnsiteCarts = VALUES(hasOnsiteCarts),\n";
+        query += "hasParabolicMirrors = VALUES(hasParabolicMirrors),\n";
+        query += "hasMotionLights = VALUES(hasMotionLights),\n";
+        query += "hasElectronicLease = VALUES(hasElectronicLease),\n";
+        query += "hasPaperlessBilling = VALUES(hasPaperlessBilling),\n";
+        query += "mondayOpen = VALUES(mondayOpen),\n";
+        query += "mondayClose = VALUES(mondayClose),\n";
+        query += "tuesdayOpen = VALUES(tuesdayOpen),\n";
+        query += "tuesdayClose = VALUES(tuesdayClose),\n";
+        query += "wednesdayOpen = VALUES(wednesdayOpen),\n";
+        query += "wednesdayClose = VALUES(wednesdayClose),\n";
+        query += "thursdayOpen = VALUES(thursdayOpen),\n";
+        query += "thursdayClose = VALUES(thursdayClose),\n";
+        query += "fridayOpen = VALUES(fridayOpen),\n";
+        query += "fridayClose = VALUES(fridayClose),\n";
+        query += "saturdayOpen = VALUES(saturdayOpen),\n";
+        query += "saturdayClose = VALUES(saturdayClose),\n";
+        query += "sundayOpen = VALUES(sundayOpen),\n";
+        query += "sundayClose = VALUES(sundayClose),\n";
+        query += "rating = VALUES(rating),\n";
+        query += "promotions = VALUES(promotions)";
+        
+        executeQuery(query);
+    }
+    
+    public void forceAddFacilityToUnits(ArrayList<FacilityToUnit> facilityToUnits) throws SQLException
+    {
+        String query = "INSERT INTO FacilitiesUnits (id, facilityId, unitId, dateCreated, rateAmount, rateType)\n";
+        query += "VALUES\n";
+        for(int i = 0; i < facilityToUnits.size(); i++)
+        {
+            query += buildValuesOfFacilityToUnitInsertQuery(facilityToUnits.get(i));
+            if(i < facilityToUnits.size()-1)
+            {
+                query += ",";
+            }
+            query += "\n";
+        }
+        query += "ON DUPLICATE KEY UPDATE\n";
+        query += "id = VALUES(id),\n";
+        query += "facilityId = VALUES(facilityId),\n";
+        query += "unitId = VALUES(unitId),\n";
+        query += "dateCreated = VALUES(dateCreated),\n";
+        query += "rateAmount = VALUES(rateAmount),\n";
+        query += "rateType = VALUES(rateType)";
+        executeQuery(query);
+    }
+    
+    public void forceAddUnits(ArrayList<Unit> units) throws SQLException
+    {
+        String query = "INSERT INTO Units (id, name, type, width, depth, height, floor, doorHeight, doorWidth)\n";
+        query += "VALUES\n";
+        for(int i = 0; i < units.size(); i++)
+        {
+            query += buildValuesOfUnitInsertQuery(units.get(i));
+            if(i < units.size()-1)
+            {
+                query += ",";
+            }
+            query += "\n";
+        }
+        query += "ON DUPLICATE KEY UPDATE\n";
+        query += "id = VALUES(id),\n";
+        query += "name = VALUES(name),\n";
+        query += "type = VALUES(type),\n";
+        query += "width = VALUES(width),\n";
+        query += "depth = VALUES(depth),\n";
+        query += "height = VALUES(height),\n";
+        query += "floor = VALUES(floor),\n";
+        query += "doorHeight = VALUES(doorHeight),\n";
+        query += "doorWidth = VALUES(doorWidth)";
+        executeQuery(query);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+
+
+
+
 
 
 
@@ -1470,7 +1762,7 @@ public class RDSHandler
 
             }
         }
-        out.println(query);
+        //out.println(query);
         executeQuery(query);
     }
 
@@ -1509,7 +1801,7 @@ public class RDSHandler
 
             }
         }
-        out.println(query);
+        //out.println(query);
         executeQuery(query);
     }
 
@@ -1521,11 +1813,11 @@ public class RDSHandler
             for(int i = 0; i < facilityToUnits.size(); i++)
             {
                 FacilityToUnit facilityToUnit = facilityToUnits.get(i);
-                out.println(facilityToUnit.getId());
+                //out.println(facilityToUnit.getId());
                 if(facilityToUnit.getFacilityId() == 4)
                 {
-                    out.println("FOUND ONE");
-                    out.println(facilityToUnit);
+//                    out.println("FOUND ONE");
+//                    out.println(facilityToUnit);
                 }
 
 
@@ -1910,44 +2202,80 @@ public class RDSHandler
      */
     public long getMaxCompanyId() throws SQLException
     {
-        ResultSet resultSet = executeQuery("SELECT max(id) FROM Companies");
+        ResultSet resultSet = executeQuery("SELECT IFNULL(max(id),-1) FROM Companies");
         resultSet.next();
-        return resultSet.getLong(1);
+        Long result = resultSet.getLong(1);
+        return result;
+    }
+    
+    public long getMaxCompanyToFacilityId() throws SQLException
+    {
+        ResultSet resultSet = executeQuery("SELECT IFNULL(max(id),-1) FROM CompaniesFacilities");
+        resultSet.next();
+        Long result = resultSet.getLong(1);
+        if(result == null)
+            return -1;
+        return result;
+    }
+    
+    public long getMaxFacilityId() throws SQLException
+    {
+        ResultSet resultSet = executeQuery("SELECT IFNULL(max(id),-1) FROM Facilities");
+        resultSet.next();
+        Long result = resultSet.getLong(1);
+        if(result == null)
+            return -1;
+        return result;
     }
 
     public long getMaxFacilityToUnitId() throws SQLException
     {
-        ResultSet rs = executeQuery("SELECT max(id) FROM FacilitiesUnits");
-        rs.next();
-        return rs.getLong(1);
+        ResultSet resultSet = executeQuery("SELECT IFNULL(max(id),-1) FROM FacilitiesUnits");
+        resultSet.next();
+        Long result = resultSet.getLong(1);
+        if(result == null)
+            return -1;
+        return result;
     }
 
     public long getMaxFacilityToUnitHistoryId() throws SQLException
     {
-        ResultSet rs = executeQuery("SELECT max(id) FROM FacilitiesUnitsHistory");
-        rs.next();
-        return rs.getLong(1);
+        ResultSet resultSet = executeQuery("SELECT IFNULL(max(id),-1) FROM FacilitiesUnitsHistory");
+        resultSet.next();
+        Long result = resultSet.getLong(1);
+        if(result == null)
+            return -1;
+        return result;
     }
 
     public long getMaxUnitId() throws SQLException
     {
-        ResultSet rs = executeQuery("SELECT max(id) FROM Units");
-        rs.next();
-        return rs.getLong(1);
+        ResultSet resultSet = executeQuery("SELECT IFNULL(max(id),-1) FROM Units");
+        resultSet.next();
+        Long result = resultSet.getLong(1);
+        if(result == null)
+            return -1;
+        return result;
     }
 
     public long getMaxUserId() throws SQLException
     {
-        ResultSet rs = executeQuery("SELECT max(id) FROM Users");
-        rs.next();
-        return rs.getLong(1);
+        ResultSet resultSet = executeQuery("SELECT IFNULL(max(id),-1) FROM Users");
+        resultSet.next();
+        Long result = resultSet.getLong(1);
+        if(result == null)
+            return -1;
+        return result;
     }
     
     public long getMaxWriteTimeId() throws SQLException
     {
         ResultSet resultSet = executeQuery("SELECT max(id) FROM WriteTimes");
         resultSet.next();
-        return resultSet.getLong(1);
+        Long result = resultSet.getLong(1);
+        if(result == null)
+            return -1;
+        return result;
     }
 
     public void emptyUsersTable() throws SQLException
