@@ -6,6 +6,7 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBIgnore;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @DynamoDBTable(tableName = "FacilitiesUnitsRecent")
@@ -14,7 +15,7 @@ public class FacilityToUnit implements Comparable<FacilityToUnit>
     private long id;
     private long facilityId;
     private long unitId;
-    private Date dateCreated;
+    private LocalDateTime dateCreated;
     private BigDecimal rateAmount;
     private String rateType;
 
@@ -35,12 +36,12 @@ public class FacilityToUnit implements Comparable<FacilityToUnit>
     }
 
     @DynamoDBAttribute(attributeName = "timeCreated")
-    public Date getDateCreated()
+    public LocalDateTime getDateCreated()
     {
         return dateCreated;
     }
 
-    public void setDateCreated(Date dateCreated)
+    public void setDateCreated(LocalDateTime dateCreated)
     {
         this.dateCreated = dateCreated;
     }
@@ -98,6 +99,19 @@ public class FacilityToUnit implements Comparable<FacilityToUnit>
         this.rateType = other.getRateType();
 
         return this;
+    }
+    
+    public FacilityToUnitHistory getAsFacilityToUnitHistory()
+    {
+        FacilityToUnitHistory facilityToUnitHistory = new FacilityToUnitHistory();
+        facilityToUnitHistory.setId(id);
+        facilityToUnitHistory.setFacilityId(facilityId);
+        facilityToUnitHistory.setUnitId(unitId);
+        facilityToUnitHistory.setDateCreated(dateCreated);
+        facilityToUnitHistory.setRateAmount(rateAmount);
+        facilityToUnitHistory.setRateType(rateType);
+
+        return facilityToUnitHistory;
     }
 
     public String toString()

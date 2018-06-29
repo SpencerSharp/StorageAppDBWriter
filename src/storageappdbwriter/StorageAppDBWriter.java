@@ -15,7 +15,9 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -65,6 +67,8 @@ public class StorageAppDBWriter
         RDSHandler rds = new RDSHandler();
         //rds.resetTables();
         //System.exit(1);
+        Calendar start = Calendar.getInstance();
+
         
         String dataFile = "DataFiles/Scraper_Input.txt";
         
@@ -81,16 +85,14 @@ public class StorageAppDBWriter
         HashMap<Facility,Long> facilityToCorrectId = new HashMap<Facility,Long>();
         ArrayList<FacilityToUnit> facilitiesToUnits = new ArrayList<FacilityToUnit>();
         long maxFacilityToUnitId = rds.getMaxFacilityToUnitId();
-        ArrayList<FacilityToUnitHistory> facilitiesToUnitsHistory = new ArrayList<FacilityToUnitHistory>();
-        long maxFacilityToUnitHistoryId = rds.getMaxFacilityToUnitHistoryId();
         ArrayList<Unit> units = new ArrayList<Unit>();
         long maxUnitId = rds.getMaxUnitId();
         HashMap<Unit,Long> unitToCorrectId = new HashMap<Unit,Long>();
         
         Company company = null;
         Facility facility = null;
-        Date writingDate = new Date();
-        Timestamp writetime = new Timestamp(writingDate.getTime());
+        LocalDateTime writingDate = rds.getCurrentLocalDateTimeToWrite();
+        //Timestamp writetime = rds.getSqlDateFromDate(writingDate);
         WriteTime writeTime = new WriteTime();
         writeTime.setTime(writingDate);
         
@@ -101,7 +103,7 @@ public class StorageAppDBWriter
             String line;
             while((line=f.readLine())!=null)
             {
-                out.println("LINE: " + line);
+                //out.println("LINE: " + line);
                 if(line.equals("-"))
                 {
                     //Company time
@@ -214,6 +216,7 @@ public class StorageAppDBWriter
                         }
                         companyToFacility.setCompanyId(companyToCorrectId.get(company));
                         companyToFacility.setFacilityId(facilityToCorrectId.get(facility));
+                        
                         companiesToFacilities.add(companyToFacility);
                     }
                 }
@@ -244,6 +247,7 @@ public class StorageAppDBWriter
 
                         boolean found = false;
                         //TODO: Replace this loop with something else
+                        //IDEA: Sort the list, everything that has compareTo == 0 adjacent merge into one
                         for(Unit temp : units)
                         {
                             if(temp.equalsUnit(unit))
@@ -254,10 +258,15 @@ public class StorageAppDBWriter
                             }
                         }
                         
-                        if(unit.getType().equals("Non-Climate") && unit.getName().equals("5'x10'") && unit.getFloor() == 1)
+                        if(i==1 && unit.getId() == 11)
                         {
-                            out.println("DUPLICATE: " + facility);
+                            out.println("11 " + facility);
                         }
+                        
+                        //if(unit.getType().equals("Non-Climate") && unit.getName().equals("5'x10'") && unit.getFloor() == 1)
+                        //{
+                        //    out.println("DUPLICATE: " + facility);
+                        //}
 
                         if(!found)
                         {
@@ -283,6 +292,10 @@ public class StorageAppDBWriter
                         facilityToUnit.setFacilityId(facilityToCorrectId.get(facility));
                         facilityToUnit.setDateCreated(writingDate);
                         facilityToUnit.setRateType("standard");
+                        if(i==1 && unit.getId() == 11)
+                        {
+                            out.println("THIS IT: " +facilityToUnit);
+                        }
                         facilitiesToUnits.add(facilityToUnit);
                     }
                     else
@@ -300,135 +313,142 @@ public class StorageAppDBWriter
                 out.println(units);
                 
                 ArrayList<Company> dbCompanies = rds.getAllCompanies();
+                Collections.sort(dbCompanies);
                 ArrayList<Facility> dbFacilities = rds.getAllFacilities();
+                Collections.sort(dbFacilities);
                 ArrayList<Unit> dbUnits = rds.getAllUnits();
+                Collections.sort(dbUnits);
+                
+                ArrayList<Company> companiesToWrite = new ArrayList<Company>();
                 
                 int index1 = 0;
                 int index2 = 0;
-                
-                Company localCompany = null;
-                if(companies.size() > 0)
-                {
-                    localCompany = companies.get(0);
-                }
-                Company dbCompany = null;
-                if(dbCompanies.size() > 0)
-                {
-                    dbCompany = dbCompanies.get(0);
-                }
+                long index = 0;
                 
                 while(index1 < companies.size() && index2 < dbCompanies.size())
                 {
-                    localCompany = companies.get(index1);
-                    dbCompany = dbCompanies.get(index2);
-                    if(localCompany.compareTo(dbCompany) < 0) //This is a new company
+                    int compare = companies.get(index1).compareTo(dbCompanies.get(index2));
+                    if(compare > 0) //This is a new company
                     {
-                        companyToCorrectId.put(localCompany, ++maxCompanyId);
-                        localCompany.setId(maxCompanyId);
-                        index1++;
-                        
+                        companyToCorrectId.put(dbCompanies.get(index2), index);
+                        dbCompanies.get(index2).setId(index++);
+                        companiesToWrite.add(dbCompanies.get(index2++));
                     }
-                    else if(localCompany.compareTo(dbCompany) == 0) //The companies match
+                    else if(compare == 0) //The companies match
                     {
-                        companyToCorrectId.put(localCompany, dbCompany.getId());
-                        localCompany.setId(dbCompany.getId());
-                        index1++;
+                        companyToCorrectId.put(companies.get(index1), index);
+                        companies.get(index1).setId(index++);
+                        companiesToWrite.add(companies.get(index1++));
                         index2++;
                     }
                     else //Keep looking in dbCompanies
                     {
-                        index2++;
+                        companyToCorrectId.put(companies.get(index1),index);
+                        
+                        companies.get(index1).setId(index++);
+                
+                        companiesToWrite.add(companies.get(index1++));
                     }
                 }
-                for(int in = index1; in < companies.size(); in++)
+                for(int j = index1; j < companies.size(); j++)
                 {
-                    companyToCorrectId.put(companies.get(in), ++maxCompanyId);
-                    companies.get(in).setId(maxCompanyId);
+                    companyToCorrectId.put(companies.get(j), index);
+                    companies.get(j).setId(index++);
+                    companiesToWrite.add(companies.get(j));
+                }
+                for(int j = index2; j < dbCompanies.size(); j++)
+                {
+                    companyToCorrectId.put(dbCompanies.get(j), index);
+                    dbCompanies.get(j).setId(index++);
+                    companiesToWrite.add(dbCompanies.get(j));
                 }
                 
                 index1 = 0;
                 index2 = 0;
+                index = 0;
                 
-                Facility localFacility = null;
-                if(facilities.size() > 0)
-                {
-                    localFacility = facilities.get(0);
-                }
-                Facility dbFacility = null;
-                if(dbFacilities.size() > 0)
-                {
-                    dbFacility = dbFacilities.get(0);
-                }
+                ArrayList<Facility> facilitiesToWrite = new ArrayList<Facility>();
                 
                 while(index1 < facilities.size() && index2 < dbFacilities.size())
                 {
-                    localFacility = facilities.get(index1);
-                    dbFacility = dbFacilities.get(index2);
-                    if(localFacility.compareTo(dbFacility) < 0) //This is a new company
+                    int compare = facilities.get(index1).compareTo(facilities.get(index2));
+                    if(compare > 0) //This is a new company
                     {
-                        facilityToCorrectId.put(localFacility, ++maxFacilityId);
-                        facility.setId(maxFacilityId);
-                        index1++;
-                        
+                        facilityToCorrectId.put(dbFacilities.get(index2), index);
+                        dbFacilities.get(index2).setId(index++);
+                        facilitiesToWrite.add(dbFacilities.get(index2++));
                     }
-                    else if(localFacility.compareTo(dbFacility) == 0) //The companies match
+                    else if(compare == 0) //The companies match
                     {
-                        facilityToCorrectId.put(localFacility, dbFacility.getId());
-                        facility.setId(dbFacility.getId());
-                        index1++;
+                        facilityToCorrectId.put(facilities.get(index1), index);
+                        facilities.get(index1).setId(index++);
+                        facilitiesToWrite.add(facilities.get(index1++));
                         index2++;
                     }
                     else //Keep looking in dbCompanies
                     {
-                        index2++;
+                        facilityToCorrectId.put(facilities.get(index1),index);
+                        
+                        facilities.get(index1).setId(index++);
+                
+                        facilitiesToWrite.add(facilities.get(index1++));
                     }
                 }
-                for(int in = index1; in < facilities.size(); in++)
+                for(int j = index1; j < facilities.size(); j++)
                 {
-                    facilityToCorrectId.put(facilities.get(in), ++maxFacilityId);
-                    facilities.get(in).setId(maxFacilityId);
+                    facilityToCorrectId.put(facilities.get(j), index);
+                    facilities.get(j).setId(index++);
+                    facilitiesToWrite.add(facilities.get(j));
+                }
+                for(int j = index2; j < dbFacilities.size(); j++)
+                {
+                    facilityToCorrectId.put(dbFacilities.get(j), index);
+                    dbFacilities.get(j).setId(index++);
+                    facilitiesToWrite.add(dbFacilities.get(j));
                 }
                 
                 index1 = 0;
                 index2 = 0;
+                index = 0;
                 
-                Unit localUnit = null;
-                if(units.size() > 0)
-                {
-                    localUnit = units.get(0);
-                }
-                Unit dbUnit = null;
-                if(dbUnits.size() > 0)
-                {
-                    dbUnit = dbUnits.get(0);
-                }
+                ArrayList<Unit> unitsToWrite = new ArrayList<Unit>();
                 
                 while(index1 < units.size() && index2 < dbUnits.size())
                 {
-                    localUnit = units.get(index1);
-                    dbUnit = dbUnits.get(index2);
-                    if(localUnit.compareTo(dbUnit) < 0) //This is a new company
+                    int compare = units.get(index1).compareTo(dbUnits.get(index2));
+                    if(compare > 0) //This is a new company
                     {
-                        unitToCorrectId.put(localUnit, ++maxUnitId);
-                        localUnit.setId(maxUnitId);
-                        index1++;
+                        unitToCorrectId.put(dbUnits.get(index2), index);
+                        dbUnits.get(index2).setId(index++);
+                        unitsToWrite.add(dbUnits.get(index2++));
                     }
-                    else if(localUnit.compareTo(dbUnit) == 0) //The companies match
+                    else if(compare == 0) //The companies match
                     {
-                        unitToCorrectId.put(localUnit, dbUnit.getId());
-                        localUnit.setId(dbUnit.getId());
-                        index1++;
+                        unitToCorrectId.put(units.get(index1), index);
+                        units.get(index1).setId(index++);
+                        unitsToWrite.add(units.get(index1++));
                         index2++;
                     }
                     else //Keep looking in dbCompanies
                     {
-                        index2++;
+                        unitToCorrectId.put(units.get(index1),index);
+                        
+                        units.get(index1).setId(index++);
+                
+                        unitsToWrite.add(units.get(index1++));
                     }
                 }
-                for(int in = index1; in < units.size(); in++)
+                for(int j = index1; j < units.size(); j++)
                 {
-                    unitToCorrectId.put(units.get(in), ++maxUnitId);
-                    units.get(in).setId(maxUnitId);
+                    unitToCorrectId.put(units.get(j), index);
+                    units.get(j).setId(index++);
+                    unitsToWrite.add(units.get(j));
+                }
+                for(int j = index2; j < dbUnits.size(); j++)
+                {
+                    unitToCorrectId.put(dbUnits.get(j), index);
+                    dbUnits.get(j).setId(index++);
+                    unitsToWrite.add(dbUnits.get(j));
                 }
                 out.println("MAP OF FOUND: " + companyToCorrectId);
             }
@@ -437,45 +457,46 @@ public class StorageAppDBWriter
         Collections.sort(companiesToFacilities);
         
         ArrayList<CompanyToFacility> dbCompaniesToFacilities = rds.getAllCompanyToFacilities();
+        Collections.sort(dbCompaniesToFacilities);
+        
+        ArrayList<CompanyToFacility> companiesToFacilitiesToWrite = new ArrayList<CompanyToFacility>();
         
         int index1 = 0;
         int index2 = 0;
-
-        CompanyToFacility localCompanyToFacility = null;
-        if(units.size() > 0)
-        {
-            localCompanyToFacility = companiesToFacilities.get(0);
-        }
-        CompanyToFacility dbCompanyToFacility = null;
-        if(dbCompaniesToFacilities.size() > 0)
-        {
-            dbCompanyToFacility = dbCompaniesToFacilities.get(0);
-        }
-
+        int index = 0;
+                
         while(index1 < companiesToFacilities.size() && index2 < dbCompaniesToFacilities.size())
         {
-            localCompanyToFacility = companiesToFacilities.get(index1);
-            dbCompanyToFacility = dbCompaniesToFacilities.get(index2);
-            if(localCompanyToFacility.compareTo(dbCompanyToFacility) < 0) //This is a new company
+            int compare = companiesToFacilities.get(index1).compareTo(dbCompaniesToFacilities.get(index2));
+            if(compare > 0) //This is a new company
             {
-                localCompanyToFacility.setId(++maxCompanyToFacilityId);
-                index1++;
+                dbCompaniesToFacilities.get(index2).setId(index++);
+                companiesToFacilitiesToWrite.add(dbCompaniesToFacilities.get(index2++));
             }
-            else if(localCompanyToFacility.compareTo(dbCompanyToFacility) == 0) //The companies match
+            else if(compare == 0) //The companies match
             {
-                localCompanyToFacility.setId(dbCompanyToFacility.getId());
-                index1++;
+                companiesToFacilities.get(index1).setId(index++);
+                companiesToFacilitiesToWrite.add(companiesToFacilities.get(index1++));
                 index2++;
             }
             else //Keep looking in dbCompanies
             {
-                index2++;
+                companiesToFacilities.get(index1).setId(index++);
+
+                companiesToFacilitiesToWrite.add(companiesToFacilities.get(index1++));
             }
         }
-        for(int in = index1; in < companiesToFacilities.size(); in++)
+        for(int j = index1; j < companiesToFacilities.size(); j++)
         {
-            companiesToFacilities.get(in).setId(++maxCompanyToFacilityId);
+            companiesToFacilities.get(j).setId(index++);
+            companiesToFacilitiesToWrite.add(companiesToFacilities.get(j));
         }
+        for(int j = index2; j < dbCompaniesToFacilities.size(); j++)
+        {
+            dbCompaniesToFacilities.get(j).setId(index++);
+            companiesToFacilitiesToWrite.add(dbCompaniesToFacilities.get(j));
+        }
+        
         
         
         
@@ -487,71 +508,71 @@ public class StorageAppDBWriter
         
         
         Collections.sort(facilitiesToUnits);
-        
         ArrayList<FacilityToUnit> dbFacilitiesToUnits = rds.getAllFacilityToUnits();
-        ArrayList<Long> facilityToUnitsToBackup = new ArrayList<Long>();
+        Collections.sort(dbFacilitiesToUnits);
+        ArrayList<FacilityToUnit> facilityToUnitsToWrite = new ArrayList<FacilityToUnit>();
+        ArrayList<FacilityToUnitHistory> facilityToUnitsToBackup = rds.getAllFacilityToUnitHistories();
         
         index1 = 0;
         index2 = 0;
-
-        FacilityToUnit localFacilityToUnit = null;
-        if(units.size() > 0)
-        {
-            localFacilityToUnit = facilitiesToUnits.get(0);
-        }
-        FacilityToUnit dbFacilityToUnit = null;
-        if(dbCompaniesToFacilities.size() > 0)
-        {
-            dbFacilityToUnit = dbFacilitiesToUnits.get(0);
-        }
-
+        index = 0;
+                
         while(index1 < facilitiesToUnits.size() && index2 < dbFacilitiesToUnits.size())
         {
-            localFacilityToUnit = facilitiesToUnits.get(index1);
-            dbFacilityToUnit = dbFacilitiesToUnits.get(index2);
-            if(localFacilityToUnit.compareTo(dbFacilityToUnit) < 0) //This is a new company
+            int compare = facilitiesToUnits.get(index1).compareTo(dbFacilitiesToUnits.get(index2));
+            if(compare > 0) //This is a new company
             {
-                localFacilityToUnit.setId(++maxFacilityToUnitId);
-                index1++;
+                dbFacilitiesToUnits.get(index2).setId(index++);
+                facilityToUnitsToWrite.add(dbFacilitiesToUnits.get(index2++));
             }
-            else if(localFacilityToUnit.compareTo(dbFacilityToUnit) == 0) //The companies match
+            else if(compare == 0) //The companies match
             {
-                localFacilityToUnit.setId(dbFacilityToUnit.getId());
-                facilityToUnitsToBackup.add(dbFacilityToUnit.getId());
-                index1++;
-                index2++;
+                facilitiesToUnits.get(index1).setId(index++);
+                facilityToUnitsToWrite.add(facilitiesToUnits.get(index1++));
+                facilityToUnitsToBackup.add(dbFacilitiesToUnits.get(index2++).getAsFacilityToUnitHistory());
             }
             else //Keep looking in dbCompanies
             {
-                index2++;
+                facilitiesToUnits.get(index1).setId(index++);
+
+                facilityToUnitsToWrite.add(facilitiesToUnits.get(index1++));
             }
         }
-        for(int in = index1; in < facilitiesToUnits.size(); in++)
+        for(int j = index1; j < facilitiesToUnits.size(); j++)
         {
-            if(in==137 || in==138)
-            {
-                out.println(facilitiesToUnits.get(in));
-            }
-            facilitiesToUnits.get(in).setId(++maxFacilityToUnitId);
+            facilitiesToUnits.get(j).setId(index++);
+            facilityToUnitsToWrite.add(facilitiesToUnits.get(j));
         }
+        for(int j = index2; j < dbFacilitiesToUnits.size(); j++)
+        {
+            dbFacilitiesToUnits.get(j).setId(index++);
+            facilityToUnitsToWrite.add(dbFacilitiesToUnits.get(j));
+        }
+        Collections.sort(facilityToUnitsToBackup);
+        index = 0;
+        for(FacilityToUnitHistory facilityToUnitHistory : facilityToUnitsToBackup)
+        {
+            facilityToUnitHistory.setId(index++);
+        }
+        out.println("BACKING UP: " + facilityToUnitsToBackup.size());
 
         //NOW ALL THE LISTS ARE SET UP WITH CORRECT IDS!!!
-        ArrayList<FacilityToUnit> onesToReplace = rds.getFacilityToUnitsFromFacilityIds(facilityToUnitsToBackup);
-        ArrayList<FacilityToUnitHistory> onesToAdd = new ArrayList<FacilityToUnitHistory>();
-        for(int in = 0; in < onesToReplace.size(); in++)
-        {
-            onesToReplace.get(in).setId(++maxFacilityToUnitHistoryId);
-            //if(onesToReplace.get(in).getFacilityId() == 6)
-                onesToAdd.add(new FacilityToUnitHistory().createFromFacilityToUnit(onesToReplace.get(in)));
-        }
+//        ArrayList<FacilityToUnitHistory> onesToAdd = new ArrayList<FacilityToUnitHistory>();
+//        for(int in = 0; in < onesToReplace.size(); in++)
+//        {
+//            onesToReplace.get(in).setId(++maxFacilityToUnitHistoryId);
+//            //if(onesToReplace.get(in).getFacilityId() == 6)
+//                onesToAdd.add(new FacilityToUnitHistory().createFromFacilityToUnit(onesToReplace.get(in)));
+//        }
         
-        rds.batchSaveFacilityToUnitsHistory(onesToAdd);
+        //rds.batchSaveFacilityToUnitsHistory(onesToAdd);
         
-        rds.forceAddCompanies(companies);
-        rds.forceAddCompanyToFacilities(companiesToFacilities);
-        rds.forceAddFacilities(facilities);
-        rds.forceAddFacilityToUnits(facilitiesToUnits);
-        rds.forceAddUnits(units);
+        rds.overwriteAllCompanies(companies);
+        rds.overwriteAllCompanyToFacilities(companiesToFacilities);
+        rds.overwriteAllFacilities(facilities);
+        rds.overwriteAllFacilityToUnits(facilitiesToUnits);
+        rds.overwriteAllFacilityToUnitHistories(facilityToUnitsToBackup);
+        rds.overwriteAllUnits(units);
         
         writeTime.setId(rds.getMaxWriteTimeId()+1);
         rds.addWriteTime(writeTime);
@@ -849,8 +870,8 @@ public class StorageAppDBWriter
         user.setUsername("Admin");
         user.setPassword("test");
         user.setIsActive(true);
-        user.setDateCreated(new Date());
-        user.setDateUpdated(new Date());
+        user.setDateCreated(LocalDateTime.now());
+        user.setDateUpdated(LocalDateTime.now());
         
         User user2 = new User();
         user2.setId(1);
@@ -860,12 +881,12 @@ public class StorageAppDBWriter
         user2.setUsername("spencers");
         user2.setPassword("testPass");
         user2.setIsActive(true);
-        user2.setDateCreated(new Date());
-        user2.setDateUpdated(new Date());
+        user2.setDateCreated(LocalDateTime.now());
+        user2.setDateUpdated(LocalDateTime.now());
         
         ArrayList<User> users = new ArrayList<User>();
-        users.add(user);
-        users.add(user2);
+        users.add(user); 
+       users.add(user2);
         
         UserPreferences userPreferences = new UserPreferences();
         userPreferences.setUserId(0);

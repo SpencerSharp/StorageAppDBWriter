@@ -6,6 +6,7 @@
 package storageappdbwriter;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 /**
@@ -15,7 +16,7 @@ import java.util.Date;
 public class WriteTime
 {
     long id;
-    Date time;
+    LocalDateTime time;
     
     public long getId()
     {
@@ -27,12 +28,12 @@ public class WriteTime
         this.id = id;
     }
     
-    public Date getTime()
+    public LocalDateTime getTime()
     {
         return time;
     }
     
-    public void setTime(Date date)
+    public void setTime(LocalDateTime date)
     {
         this.time = date;
     }

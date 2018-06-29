@@ -5,6 +5,9 @@ import java.io.IOException;
 import static java.lang.System.out;
 
 import java.sql.*;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -29,26 +32,70 @@ public class RDSHandler
 
 
 
-
-
-
-
-    public java.util.Date getDateFromSqlDate(Timestamp date)
+    public LocalDateTime getTimeToWriteFromString(String time)
     {
-        Date javaDate = null;
-        if (date != null) {
-            javaDate = new Date(date.getTime());
-        }
-        return javaDate;
+        String format = "yyyy-MM-dd HH:mm";
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
+        LocalDateTime dateTime = LocalDateTime.parse(time, formatter);
+        return offsetToWriteTime(dateTime);
     }
 
-    public Timestamp getSqlDateFromDate(Date date)
+    public LocalDateTime getCurrentLocalDateTimeToWrite()
+    {
+        ZoneId first = ZoneId.of("GMT");
+        ZoneId second = ZoneId.systemDefault();
+        LocalDateTime newDateTime = LocalDateTime.now().atZone(second)
+                                       .withZoneSameInstant(first)
+                                       .toLocalDateTime();
+        return newDateTime;
+    }
+
+    public LocalDateTime getDateFromSqlDate(Timestamp date)
+    {
+        LocalDateTime javaDate = null;
+        if (date != null) {
+            javaDate = date.toLocalDateTime();
+        }
+        ZoneId first = ZoneId.of("GMT");
+        ZoneId second = ZoneId.systemDefault();
+        LocalDateTime newDateTime =  javaDate.atZone(second)
+                                       .withZoneSameInstant(first)
+                                       .toLocalDateTime();
+        return newDateTime;
+    }
+    
+    public LocalDateTime offsetToWriteTime(LocalDateTime localDateTime)
+    {
+        ZoneId first = ZoneId.of("GMT");
+        ZoneId second = ZoneId.systemDefault();
+        LocalDateTime newDateTime = localDateTime.atZone(second)
+                                       .withZoneSameInstant(first)
+                                       .toLocalDateTime();
+        return newDateTime;
+    }
+
+    public Timestamp getSqlDateFromDate(LocalDateTime date)
     {
         if(date == null)
             return null;
-        Timestamp result = new Timestamp(date.getTime());
+        Timestamp result = Timestamp.valueOf(date);
         return result;
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     public RDSHandler() {
 
@@ -471,7 +518,7 @@ public class RDSHandler
             }// nothing we can do
         }//end try
     }
-    
+
     private static void createWriteTimesTable(Connection conn)
     {
         Statement statement = null;
@@ -560,7 +607,7 @@ public class RDSHandler
 
     public ResultSet executeQuery(String query) throws SQLException
     {
-        //System.out.println("QUERY: " + query);
+        System.out.println("QUERY: " + query);
         Statement statement = connection.createStatement();
         if(query.contains("INSERT") || query.contains("DELETE") || query.contains("UPDATE") || query.contains("TRUNCATE"))
         {
@@ -942,7 +989,7 @@ public class RDSHandler
         String query = "INSERT INTO UserPreferences VALUES" + buildValuesOfUserPreferencesInsertQuery(userPreferences);
         return query;
     }
-    
+
     private String buildValuesOfWriteTimeInsertQuery(WriteTime writeTime)
     {
         String result = "(";
@@ -958,7 +1005,7 @@ public class RDSHandler
         }
         return result;
     }
-    
+
     private String buildWriteTimeInsertQuery(WriteTime writeTime)
     {
         String query = "INSERT INTO WriteTimes VALUES" + buildValuesOfWriteTimeInsertQuery(writeTime);
@@ -1067,7 +1114,7 @@ public class RDSHandler
         String query = buildUserPreferencesInsertQuery(userPreferences);
         executeQuery(query);
     }
-    
+
     public void addWriteTime(WriteTime writeTime) throws SQLException
     {
         String query = buildWriteTimeInsertQuery(writeTime);
@@ -1222,7 +1269,7 @@ public class RDSHandler
 
         return companies;
     }
-    
+
     public ArrayList<FacilityToUnit> getFacilityToUnitsFromFacilityIds(ArrayList<Long> facilityIds) throws SQLException
     {
         if(facilityIds.size() == 0)
@@ -1256,6 +1303,10 @@ public class RDSHandler
     {
         ArrayList<FacilityToUnit> facilityToUnits = getFacilityToUnitsFromFacilityIds(facilityIds);
 
+        if(facilityToUnits.size() == 0)
+        {
+            return new ArrayList<JavaLocalGrailsUnit>();
+        }
         //Search units for unitIds of the FacilityToUnit objects
         String query = "SELECT * FROM Units WHERE id IN (";
         for(int i = 0; i < facilityToUnits.size(); i++)
@@ -1418,7 +1469,7 @@ public class RDSHandler
         return "failed";
     }
 
-    
+
 
     public ArrayList<User> getActiveUsers() throws SQLException
     {
@@ -1459,18 +1510,80 @@ public class RDSHandler
         resultSet.next();
         return createUserPreferencesFromResultSet(resultSet);
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
+    public Company getCompanyFromFacilityName(String facilityName) throws SQLException
+    {
+        String query = "SELECT * FROM Facilities WHERE name='" + facilityName + "'";
+        ResultSet resultSet = executeQuery(query);
+        resultSet.next();
+        Facility facility = createFacilityFromResultSet(resultSet);
+        query = "SELECT * FROM Companies WHERE id=" + facility.getCompanyId();
+        resultSet = executeQuery(query);
+        resultSet.next();
+        return createCompanyFromResultSet(resultSet);
+    }
+
+    public ArrayList<FacilityToUnit> getFacilityToUnitsFromUnitIdOldestToNewest(long unitId) throws SQLException
+    {
+        String query = "SELECT * FROM FacilitiesUnits WHERE unitId=" + unitId + " ORDER BY dateCreated ASC";
+        ResultSet resultSet = executeQuery(query);
+
+        ArrayList<FacilityToUnit> results = new ArrayList<FacilityToUnit>();
+        while(resultSet.next())
+        {
+            results.add(createFacilityToUnitFromResultSet(resultSet));
+        }
+
+        return results;
+    }
+
+    public ArrayList<FacilityToUnitHistory> getFacilityToUnitHistoriesFromUnitIdOldestToNewest(long unitId) throws SQLException
+    {
+        String query = "SELECT * FROM FacilitiesUnitsHistory WHERE unitId=" + unitId + " ORDER BY dateCreated ASC";
+        ResultSet resultSet = executeQuery(query);
+
+        ArrayList<FacilityToUnitHistory> results = new ArrayList<FacilityToUnitHistory>();
+        while(resultSet.next())
+        {
+            results.add(createFacilityToUnitHistoryFromResultSet(resultSet));
+        }
+
+        return results;
+    }
+
+    public ArrayList<Facility> getFacilitiesFromFacilityNames(ArrayList<String> facilityNames) throws SQLException
+    {
+        if(facilityNames.size() == 0)
+        {
+            return new ArrayList<Facility>();
+        }
+        String query = "SELECT * FROM Facilities WHERE name = '" + facilityNames.get(0) + "'";
+        for(int i = 0; i < facilityNames.size(); i++)
+        {
+            query += " OR name = '" + facilityNames.get(i) + "'";
+        }
+        ResultSet resultSet = executeQuery(query);
+
+        ArrayList<Facility> result = new ArrayList<Facility>();
+        while(resultSet.next())
+        {
+            result.add(createFacilityFromResultSet(resultSet));
+        }
+
+        return result;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
     public ArrayList<Company> getAllCompanies() throws SQLException
     {
         ArrayList<Company> companies = new ArrayList<Company>();
@@ -1482,7 +1595,7 @@ public class RDSHandler
         }
         return companies;
     }
-    
+
     public ArrayList<CompanyToFacility> getAllCompanyToFacilities() throws SQLException
     {
         ArrayList<CompanyToFacility> companyToFacilities = new ArrayList<CompanyToFacility>();
@@ -1494,7 +1607,7 @@ public class RDSHandler
         }
         return companyToFacilities;
     }
-    
+
     public ArrayList<Facility> getAllFacilities() throws SQLException
     {
         ArrayList<Facility> facilities = new ArrayList<Facility>();
@@ -1506,7 +1619,7 @@ public class RDSHandler
         }
         return facilities;
     }
-    
+
     public ArrayList<FacilityToUnit> getAllFacilityToUnits() throws SQLException
     {
         ArrayList<FacilityToUnit> facilityToUnits = new ArrayList<FacilityToUnit>();
@@ -1519,6 +1632,18 @@ public class RDSHandler
         return facilityToUnits;
     }
     
+    public ArrayList<FacilityToUnitHistory> getAllFacilityToUnitHistories() throws SQLException
+    {
+        ArrayList<FacilityToUnitHistory> facilityToUnitHistories = new ArrayList<FacilityToUnitHistory>();
+        String query = "SELECT * FROM FacilitiesUnitsHistory";
+        ResultSet resultSet = executeQuery(query);
+        while(resultSet.next())
+        {
+            facilityToUnitHistories.add(createFacilityToUnitHistoryFromResultSet(resultSet));
+        }
+        return facilityToUnitHistories;
+    }
+
     public ArrayList<Unit> getAllUnits() throws SQLException
     {
         ArrayList<Unit> units = new ArrayList<Unit>();
@@ -1530,7 +1655,7 @@ public class RDSHandler
         }
         return units;
     }
-    
+
     public ArrayList<User> getAllUsers() throws SQLException
     {
         ArrayList<User> users = new ArrayList<User>();
@@ -1543,19 +1668,19 @@ public class RDSHandler
         return users;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
     public void forceAddCompanies(ArrayList<Company> companies) throws SQLException
     {
         String query = "INSERT INTO Companies (id, name, website)\n";
@@ -1575,7 +1700,7 @@ public class RDSHandler
         query += "website = VALUES(website)";
         executeQuery(query);
     }
-    
+
     public void forceAddCompanyToFacilities(ArrayList<CompanyToFacility> companyToFacilities) throws SQLException
     {
         String query = "INSERT INTO CompaniesFacilities (id, companyId, facilityId)\n";
@@ -1595,7 +1720,7 @@ public class RDSHandler
         query += "facilityId = VALUES(facilityId)";
         executeQuery(query);
     }
-    
+
     public void forceAddFacilities(ArrayList<Facility> facilities) throws SQLException
     {
         String query = "INSERT INTO Facilities (id, sourceURL, name, companyId, "
@@ -1664,10 +1789,10 @@ public class RDSHandler
         query += "sundayClose = VALUES(sundayClose),\n";
         query += "rating = VALUES(rating),\n";
         query += "promotions = VALUES(promotions)";
-        
+
         executeQuery(query);
     }
-    
+
     public void forceAddFacilityToUnits(ArrayList<FacilityToUnit> facilityToUnits) throws SQLException
     {
         String query = "INSERT INTO FacilitiesUnits (id, facilityId, unitId, dateCreated, rateAmount, rateType)\n";
@@ -1690,7 +1815,7 @@ public class RDSHandler
         query += "rateType = VALUES(rateType)";
         executeQuery(query);
     }
-    
+
     public void forceAddUnits(ArrayList<Unit> units) throws SQLException
     {
         String query = "INSERT INTO Units (id, name, type, width, depth, height, floor, doorHeight, doorWidth)\n";
@@ -1717,10 +1842,12 @@ public class RDSHandler
         executeQuery(query);
     }
 
-    
-    
-    
-    
+
+
+
+
+
+
     
     
     
@@ -1732,10 +1859,69 @@ public class RDSHandler
 
 
 
+    public void overwriteAllCompanies(ArrayList<Company> companies) throws SQLException
+    {
+        String query = "TRUNCATE TABLE Companies";
+        executeQuery(query);
+        batchSaveCompanies(companies);
+    }
+
+    public void overwriteAllCompanyToFacilities(ArrayList<CompanyToFacility> companiesToFacilities) throws SQLException
+    {
+        String query = "TRUNCATE TABLE CompaniesFacilities";
+        executeQuery(query);
+        batchSaveCompanyToFacilities(companiesToFacilities);
+    }
+    
+    public void overwriteAllFacilities(ArrayList<Facility> facilities) throws SQLException
+    {
+        String query = "TRUNCATE TABLE Facilities";
+        executeQuery(query);
+        batchSaveFacilities(facilities);
+    }
+    
+    public void overwriteAllFacilityToUnits(ArrayList<FacilityToUnit> facilityToUnits) throws SQLException
+    {
+        String query = "TRUNCATE TABLE FacilitiesUnits";
+        executeQuery(query);
+        batchSaveFacilityToUnits(facilityToUnits);
+    }
+    
+    public void overwriteAllFacilityToUnitHistories(ArrayList<FacilityToUnitHistory> facilityToUnitHistories) throws SQLException
+    {
+        String query = "TRUNCATE TABLE FacilitiesUnitsHistory";
+        executeQuery(query);
+        batchSaveFacilityToUnitsHistory(facilityToUnitHistories);
+    }
+    
+    public void overwriteAllUnits(ArrayList<Unit> units) throws SQLException
+    {
+        String query = "TRUNCATE TABLE Units";
+        executeQuery(query);
+        batchSaveUnits(units);
+    }
+    
+    public void overwriteAllUsers(ArrayList<User> users) throws SQLException
+    {
+        String query = "TRUNCATE TABLE Users";
+        executeQuery(query);
+        batchSaveUsers(users);
+    }
 
 
 
 
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
 
 
@@ -2207,7 +2393,7 @@ public class RDSHandler
         Long result = resultSet.getLong(1);
         return result;
     }
-    
+
     public long getMaxCompanyToFacilityId() throws SQLException
     {
         ResultSet resultSet = executeQuery("SELECT IFNULL(max(id),-1) FROM CompaniesFacilities");
@@ -2217,7 +2403,7 @@ public class RDSHandler
             return -1;
         return result;
     }
-    
+
     public long getMaxFacilityId() throws SQLException
     {
         ResultSet resultSet = executeQuery("SELECT IFNULL(max(id),-1) FROM Facilities");
@@ -2267,7 +2453,7 @@ public class RDSHandler
             return -1;
         return result;
     }
-    
+
     public long getMaxWriteTimeId() throws SQLException
     {
         ResultSet resultSet = executeQuery("SELECT max(id) FROM WriteTimes");

@@ -1,6 +1,8 @@
 package storageappdbwriter;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.TimeZone;
 
@@ -15,9 +17,9 @@ public class User {
     String username;
     String password;
     boolean isActive;
-    Date dateCreated;
+    LocalDateTime dateCreated;
     String dateCreatedString;
-    Date dateUpdated;
+    LocalDateTime dateUpdated;
     String dateUpdatedString;
 
     public User() {
@@ -80,15 +82,15 @@ public class User {
         this.isActive = isActive;
     }
 
-    public Date getDateCreated() {
+    public LocalDateTime getDateCreated() {
         return dateCreated;
     }
 
-    public void setDateCreated(Date dateCreated) {
+    public void setDateCreated(LocalDateTime dateCreated) {
         this.dateCreated = dateCreated;
-        SimpleDateFormat ft = new SimpleDateFormat ("yyyy-MM-dd HH:mm");
-        ft.setTimeZone(TimeZone.getTimeZone("UTC"));
-        dateCreatedString = ft.format(dateCreated);
+        String formatString = "yyyy-MM-dd HH:mm";
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(formatString);
+        dateCreatedString = formatter.format(dateCreated);
     }
 
     public String getDateCreatedString()
@@ -96,16 +98,15 @@ public class User {
         return dateCreatedString;
     }
 
-    public Date getDateUpdated() {
+    public LocalDateTime getDateUpdated() {
         return dateUpdated;
     }
 
-    public void setDateUpdated(Date dateUpdated) {
+    public void setDateUpdated(LocalDateTime dateUpdated) {
         this.dateUpdated = dateUpdated;
-        SimpleDateFormat ft = new SimpleDateFormat ("yyyy-MM-dd HH:mm");
-        ft.setTimeZone(TimeZone.getTimeZone("UTC"));
-        dateUpdatedString = ft.format(dateUpdated);
-
+        String formatString = "yyyy-MM-dd HH:mm";
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(formatString);
+        dateUpdatedString = formatter.format(dateUpdated);
     }
 
     public String toString() {

@@ -1,6 +1,7 @@
 package storageappdbwriter;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 public class JavaLocalGrailsUnit {
@@ -13,7 +14,7 @@ public class JavaLocalGrailsUnit {
     public int floor;
     public BigDecimal price;
     public long facilityId;
-    public Date dateCreated;
+    public LocalDateTime dateCreated;
 
     public String rateType;
 
@@ -22,7 +23,7 @@ public class JavaLocalGrailsUnit {
 
     }
 
-    public JavaLocalGrailsUnit(long id, String name, BigDecimal width, BigDecimal depth, BigDecimal height, String type, int floor, BigDecimal price, long facilityId, String rateType, Date dateCreated)
+    public JavaLocalGrailsUnit(long id, String name, BigDecimal width, BigDecimal depth, BigDecimal height, String type, int floor, BigDecimal price, long facilityId, String rateType, LocalDateTime dateCreated)
     {
         this.id = id;
         this.name = name;

@@ -479,18 +479,18 @@ public class Facility implements Comparable<Facility>
     @Override
     public int compareTo(Facility other)
     {
-        if(sourceURL == null || other.sourceURL == null)
+        if(name == null || other.name == null)
         {
-            return name.compareTo(other.name);
+            return sourceURL.compareTo(other.sourceURL);
         }
-        return sourceURL.compareTo(other.sourceURL);
+        return name.compareTo(other.name);
     }
 
     @Override
     public int hashCode()
     {
         int hash = 7;
-        hash = 47 * hash + Objects.hashCode(this.sourceURL);
+        hash = 23 * hash + Objects.hashCode(this.name);
         return hash;
     }
 
@@ -506,10 +506,12 @@ public class Facility implements Comparable<Facility>
             return false;
         }
         final Facility other = (Facility) obj;
-        if(!Objects.equals(this.sourceURL, other.sourceURL))
+        if(!Objects.equals(this.name, other.name))
         {
             return false;
         }
         return true;
     }
+    
+    
 }

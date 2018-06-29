@@ -6,15 +6,16 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBIgnore;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @DynamoDBTable(tableName = "FacilitiesUnits")
-public class FacilityToUnitHistory
+public class FacilityToUnitHistory implements Comparable<FacilityToUnitHistory>
 {
     private long id;
     private long facilityId;
     private long unitId;
-    private Date dateCreated;
+    private LocalDateTime dateCreated;
     private BigDecimal rateAmount;
     private String rateType;
 
@@ -35,12 +36,12 @@ public class FacilityToUnitHistory
     }
 
     @DynamoDBAttribute(attributeName = "dateCreated")
-    public Date getDateCreated()
+    public LocalDateTime getDateCreated()
     {
         return dateCreated;
     }
 
-    public void setDateCreated(Date dateCreated)
+    public void setDateCreated(LocalDateTime dateCreated)
     {
         this.dateCreated = dateCreated;
     }
@@ -98,6 +99,55 @@ public class FacilityToUnitHistory
         this.rateType = other.getRateType();
 
         return this;
+    }
+    
+    public FacilityToUnit getAsFacilityToUnit()
+    {
+        FacilityToUnit facilityToUnit = new FacilityToUnit();
+        facilityToUnit.setId(id);
+        facilityToUnit.setFacilityId(facilityId);
+        facilityToUnit.setUnitId(unitId);
+        facilityToUnit.setDateCreated(dateCreated);
+        facilityToUnit.setRateAmount(rateAmount);
+        facilityToUnit.setRateType(rateType);
+        
+        return facilityToUnit;
+    }
+    
+    public int compareTo(FacilityToUnitHistory other)
+    {
+        if(facilityId > other.facilityId)
+        {
+            return 1;
+        }
+        else if(facilityId < other.facilityId)
+        {
+            return -1;
+        }
+        else
+        {
+            if(unitId > other.unitId)
+            {
+                return 1;
+            }
+            else if(unitId < other.unitId)
+            {
+                return -1;
+            }
+            else
+            {
+                int compareResult = rateType.compareTo(other.rateType);
+                if(compareResult > 0)
+                {
+                    return 1;
+                }
+                else if(compareResult < 0)
+                {
+                    return -1;
+                }
+                return dateCreated.compareTo(other.dateCreated);
+            }
+        }
     }
 
     public String toString()
