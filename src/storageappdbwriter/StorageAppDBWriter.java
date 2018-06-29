@@ -91,7 +91,7 @@ public class StorageAppDBWriter
         
         Company company = null;
         Facility facility = null;
-        LocalDateTime writingDate = rds.getCurrentLocalDateTimeToWrite();
+        LocalDateTime writingDate = TimeFormatter.getCurrentLocalDateTimeToWrite();
         //Timestamp writetime = rds.getSqlDateFromDate(writingDate);
         WriteTime writeTime = new WriteTime();
         writeTime.setTime(writingDate);
@@ -870,8 +870,8 @@ public class StorageAppDBWriter
         user.setUsername("Admin");
         user.setPassword("test");
         user.setIsActive(true);
-        user.setDateCreated(LocalDateTime.now());
-        user.setDateUpdated(LocalDateTime.now());
+        user.setDateCreated(writingDate);
+        user.setDateUpdated(writingDate);
         
         User user2 = new User();
         user2.setId(1);
@@ -881,8 +881,8 @@ public class StorageAppDBWriter
         user2.setUsername("spencers");
         user2.setPassword("testPass");
         user2.setIsActive(true);
-        user2.setDateCreated(LocalDateTime.now());
-        user2.setDateUpdated(LocalDateTime.now());
+        user2.setDateCreated(writingDate);
+        user2.setDateUpdated(writingDate);
         
         ArrayList<User> users = new ArrayList<User>();
         users.add(user); 

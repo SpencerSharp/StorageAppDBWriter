@@ -32,55 +32,7 @@ public class RDSHandler
 
 
 
-    public LocalDateTime getTimeToWriteFromString(String time)
-    {
-        String format = "yyyy-MM-dd HH:mm";
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
-        LocalDateTime dateTime = LocalDateTime.parse(time, formatter);
-        return offsetToWriteTime(dateTime);
-    }
-
-    public LocalDateTime getCurrentLocalDateTimeToWrite()
-    {
-        ZoneId first = ZoneId.of("GMT");
-        ZoneId second = ZoneId.systemDefault();
-        LocalDateTime newDateTime = LocalDateTime.now().atZone(second)
-                                       .withZoneSameInstant(first)
-                                       .toLocalDateTime();
-        return newDateTime;
-    }
-
-    public LocalDateTime getDateFromSqlDate(Timestamp date)
-    {
-        LocalDateTime javaDate = null;
-        if (date != null) {
-            javaDate = date.toLocalDateTime();
-        }
-        ZoneId first = ZoneId.of("GMT");
-        ZoneId second = ZoneId.systemDefault();
-        LocalDateTime newDateTime =  javaDate.atZone(second)
-                                       .withZoneSameInstant(first)
-                                       .toLocalDateTime();
-        return newDateTime;
-    }
     
-    public LocalDateTime offsetToWriteTime(LocalDateTime localDateTime)
-    {
-        ZoneId first = ZoneId.of("GMT");
-        ZoneId second = ZoneId.systemDefault();
-        LocalDateTime newDateTime = localDateTime.atZone(second)
-                                       .withZoneSameInstant(first)
-                                       .toLocalDateTime();
-        return newDateTime;
-    }
-
-    public Timestamp getSqlDateFromDate(LocalDateTime date)
-    {
-        if(date == null)
-            return null;
-        Timestamp result = Timestamp.valueOf(date);
-        return result;
-    }
     
     
     
@@ -703,7 +655,7 @@ public class RDSHandler
         facilityToUnit.setId(resultSet.getLong("id"));
         facilityToUnit.setFacilityId(resultSet.getLong("facilityId"));
         facilityToUnit.setUnitId(resultSet.getLong("unitId"));
-        facilityToUnit.setDateCreated(getDateFromSqlDate(resultSet.getTimestamp("dateCreated")));
+        facilityToUnit.setDateCreated(TimeFormatter.getDateFromTimestamp(resultSet.getTimestamp("dateCreated")));
         facilityToUnit.setRateAmount(resultSet.getBigDecimal("rateAmount"));
         facilityToUnit.setRateType(resultSet.getString("rateType"));
         return facilityToUnit;
@@ -715,7 +667,7 @@ public class RDSHandler
         facilityToUnitHistory.setId(resultSet.getLong("id"));
         facilityToUnitHistory.setFacilityId(resultSet.getLong("facilityId"));
         facilityToUnitHistory.setUnitId(resultSet.getLong("unitId"));
-        facilityToUnitHistory.setDateCreated(getDateFromSqlDate(resultSet.getTimestamp("dateCreated")));
+        facilityToUnitHistory.setDateCreated(TimeFormatter.getDateFromTimestamp(resultSet.getTimestamp("dateCreated")));
         facilityToUnitHistory.setRateAmount(resultSet.getBigDecimal("rateAmount"));
         facilityToUnitHistory.setRateType(resultSet.getString("rateType"));
         return facilityToUnitHistory;
@@ -746,8 +698,8 @@ public class RDSHandler
         user.setUsername(resultSet.getString("username"));
         user.setPassword(resultSet.getString("password"));
         user.setIsActive(resultSet.getBoolean("isActive"));
-        user.setDateCreated(getDateFromSqlDate(resultSet.getTimestamp("dateCreated")));
-        user.setDateUpdated(getDateFromSqlDate(resultSet.getTimestamp("dateUpdated")));
+        user.setDateCreated(TimeFormatter.getDateFromTimestamp(resultSet.getTimestamp("dateCreated")));
+        user.setDateUpdated(TimeFormatter.getDateFromTimestamp(resultSet.getTimestamp("dateUpdated")));
         return user;
     }
 
@@ -863,7 +815,7 @@ public class RDSHandler
         String result = "(" + facilityToUnit.getId() + ", ";
         result += "" + facilityToUnit.getFacilityId() + ", ";
         result += "" + facilityToUnit.getUnitId() + ", ";
-        Timestamp date = getSqlDateFromDate(facilityToUnit.getDateCreated());
+        Timestamp date = TimeFormatter.getTimestampFromDate(facilityToUnit.getDateCreated());
         //PreparedStatement preparedStatement = connection.prepareStatement("?");
         //preparedStatement.setTimestamp(1,date);
         //out.println("AHA: " +preparedStatement.toString());
@@ -893,7 +845,7 @@ public class RDSHandler
         String result = "(" + facilityToUnitHistory.getId() + ", ";
         result += "" + facilityToUnitHistory.getFacilityId() + ", ";
         result += "" + facilityToUnitHistory.getUnitId() + ", ";
-        Timestamp date = getSqlDateFromDate(facilityToUnitHistory.getDateCreated());
+        Timestamp date = TimeFormatter.getTimestampFromDate(facilityToUnitHistory.getDateCreated());
         if(date == null)
         {
             result += "null, ";
@@ -948,7 +900,7 @@ public class RDSHandler
         result += "'" + user.getUsername() + "',";
         result += "'" + user.getPassword() + "',";
         result += "" + user.isActive() + ",";
-        Timestamp date = getSqlDateFromDate(user.getDateCreated());
+        Timestamp date = TimeFormatter.getTimestampFromDate(user.getDateCreated());
         if(date == null)
         {
             result += "null, ";
@@ -957,7 +909,7 @@ public class RDSHandler
         {
             result += "'" + date + "',";
         }
-        date = getSqlDateFromDate(user.getDateUpdated());
+        date = TimeFormatter.getTimestampFromDate(user.getDateUpdated());
         if(date == null)
         {
             result += "null)";
@@ -994,7 +946,7 @@ public class RDSHandler
     {
         String result = "(";
         result += writeTime.getId() + ",";
-        Date date = getSqlDateFromDate(writeTime.getTime());
+        Date date = TimeFormatter.getTimestampFromDate(writeTime.getTime());
         if(date == null)
         {
             result += "null)";
